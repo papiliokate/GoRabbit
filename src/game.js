@@ -1,6 +1,7 @@
 import { Engine, DIRS } from './engine.js';
 import { Solver } from './solver.js';
 import { Generator } from './generator.js';
+import { tutorialMap, tutorialTriggers } from './tutorial_map.js';
 
 export class GameMode {
   constructor(boardEl, statusEl, inventoryEl, hintEl) {
@@ -17,7 +18,19 @@ export class GameMode {
   }
 
   init(difficulty = 'easy') {
-    const { map, solution } = Generator.generate(difficulty);
+    this.difficulty = difficulty;
+    this.triggeredAlerts = new Set();
+    
+    let map, solution;
+    if (difficulty === 'tutorial') {
+      map = tutorialMap.map(row => [...row]);
+      solution = []; // N/A for tutorial
+    } else {
+      const gen = Generator.generate(difficulty);
+      map = gen.map;
+      solution = gen.solution;
+    }
+    
     this.initialMap = map; // Store for reset
     this.state = Generator.mapToState(map);
     this.solution = solution;
@@ -25,6 +38,7 @@ export class GameMode {
     this.boardEl.style.gridTemplateColumns = `repeat(${this.state.width}, var(--cell-size))`;
     this.updateStatus(`Go! Target moves: ${this.solution?.length || '?'}`);
     this.render();
+    setTimeout(() => this.checkTutorialTriggers(), 50);
 
     if (!this.boundEvents) {
       window.addEventListener("keydown", this.handleKeyDown);
@@ -70,20 +84,46 @@ export class GameMode {
     this.applyAction({ type: 'THROW', tx, ty });
   }
 
+  checkTutorialTriggers() {
+    if (this.difficulty !== 'tutorial') return;
+    
+    for (let i = 0; i < tutorialTriggers.length; i++) {
+        const trigger = tutorialTriggers[i];
+        if (!this.triggeredAlerts.has(i)) {
+            let fire = false;
+            if (typeof trigger.moveCount !== 'undefined' && this.state.moveCount === trigger.moveCount) {
+                fire = true;
+            } else if (typeof trigger.check === 'function' && trigger.check(this.state)) {
+                fire = true;
+            }
+            
+            if (fire) {
+                this.triggeredAlerts.add(i);
+                window.alert(trigger.msg);
+            }
+        }
+    }
+  }
+
   applyAction(action) {
     const nextState = Engine.getNextState(this.state, action);
     if (nextState.moveCount > this.state.moveCount || nextState.gameOver !== this.state.gameOver) {
       this.state = nextState;
       this.render();
       this.updateStatus(this.state.win ? "Victory!" : this.state.gameOver ? "Game Over!" : "Keep going...");
+      
+      // Delay alert slightly so UI renders first
+      setTimeout(() => this.checkTutorialTriggers(), 50);
     }
   }
 
   reset() {
     if (!this.initialMap) return;
     this.state = Generator.mapToState(this.initialMap);
+    this.triggeredAlerts.clear();
     this.render();
     this.updateStatus(`Level Reset! Target moves: ${this.solution?.length || '?'}`);
+    setTimeout(() => this.checkTutorialTriggers(), 50);
   }
 
   updateStatus(msg) {

@@ -6,6 +6,7 @@ document.querySelector('#app').innerHTML = `
     <header>
       <h1>Go Rabbit - Puzzles</h1>
       <div class="controls">
+        <button class="diff-btn" data-diff="tutorial">Tutorial</button>
         <button class="diff-btn" data-diff="small">Small</button>
         <button class="diff-btn" data-diff="medium">Medium</button>
         <button class="diff-btn" data-diff="large">Large</button>

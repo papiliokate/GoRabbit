@@ -1,5 +1,6 @@
 import { Solver } from './solver.js';
 import { lockedMaps } from './locked_maps.js';
+import { Engine } from './engine.js';
 
 export class Generator {
   static generate(difficulty) {
@@ -11,16 +12,16 @@ export class Generator {
     }
     
     let params = {
-      small: { width: 9, height: 11, numLocks: 2 },
-      medium: { width: 11, height: 13, numLocks: 3 },
-      large: { width: 13, height: 15, numLocks: 3 },
-      extra_large: { width: 15, height: 17, numLocks: 4 }
-    }[difficulty] || { width: 9, height: 11, numLocks: 2 };
+      small: { width: 9, height: 11, numSplits: 3, useCompound: false },
+      medium: { width: 11, height: 13, numSplits: 5, useCompound: false },
+      large: { width: 13, height: 15, numSplits: 7, useCompound: true },
+      extra_large: { width: 15, height: 17, numSplits: 9, useCompound: true }
+    }[difficulty] || { width: 9, height: 11, numSplits: 3, useCompound: false };
 
     let attempts = 0;
     while (attempts < 500) {
       attempts++;
-      const map = this.generateProceduralOptionA(params.width, params.height, params.numLocks);
+      const map = this.generateProceduralOptionA(params.width, params.height, params.numSplits, params.useCompound);
       const state = this.mapToState(map);
       const solution = Solver.solve(state, 600000);
 
@@ -36,7 +37,7 @@ export class Generator {
     return this.generateFallback(params);
   }
 
-  static generateProceduralOptionA(w, h, numLocks) {
+  static generateProceduralOptionA(w, h, numSplits, useCompound = false) {
     const grid = Array.from({ length: h }, () => Array(w).fill('T'));
     
     // Add logs 'L' instead of 'T' for visual variety
@@ -52,8 +53,8 @@ export class Generator {
     let rooms = [{ rx: 1, ry: 1, rw: w - 2, rh: h - 2 }];
     let splits = [];
     
-    let locksPlaced = 0;
-    while (locksPlaced < numLocks) {
+    let splitsPlaced = 0;
+    while (splitsPlaced < numSplits) {
       rooms.sort((a, b) => (b.rw * b.rh) - (a.rw * a.rh));
       let target = rooms[0];
       if (target.rw < 5 && target.rh < 5) break;
@@ -79,7 +80,7 @@ export class Generator {
         rooms.push(r1, r2);
         splits.push({ type: 'H', by: target.ry + splitY, xStart: target.rx, xEnd: target.rx + target.rw - 1 });
       }
-      locksPlaced++;
+      splitsPlaced++;
     }
 
     // Carve open spaces in rooms
@@ -95,7 +96,8 @@ export class Generator {
     grid[h - 2][w - 2] = 'E';
     
     // Add Locks at splits
-    const types = ['FOX_SLIDE', 'BEAVER_CLEAR', 'PORCUPINE_SIGHT', 'PORCUPINE_WARREN'];
+    const baseTypes = ['FOX_SLIDE', 'BEAVER_CLEAR', 'PORCUPINE_WARREN'];
+    const types = useCompound ? [...baseTypes, 'COMPOUND_SLIDE'] : baseTypes;
 
     for (const split of splits) {
       if (split.type === 'V') {
@@ -118,181 +120,319 @@ export class Generator {
         const bx = split.bx;
         const doorY = Math.floor(Math.random() * (split.yEnd - split.yStart - 1)) + split.yStart + 1;
 
-        if (lockType === 'FOX_SLIDE') {
-           grid[doorY][bx] = ' ';
-           const isTop = Math.random() > 0.5 && doorY > split.yStart + 1;
-           const foxY = isTop ? split.yStart : split.yEnd;
-           const step = isTop ? 1 : -1;
-           const pocketY = doorY + step;
-           const startY = Math.min(foxY, pocketY);
-           const endY = Math.max(foxY, pocketY);
-           for (let y = startY; y <= endY; y++) {
-               if (y !== doorY) {
-                   if (['T', 'L', ' '].includes(grid[y][bx])) grid[y][bx] = ' ';
-                   if (grid[y][bx + 1] !== 'W' && grid[y][bx + 1] !== 'E') grid[y][bx + 1] = 'T';
+        if (lockType === 'COMPOUND_SLIDE') {
+           const isTop = Math.random() > 0.5 && doorY < split.yEnd - 2;
+           if (isTop) {
+               grid[doorY][bx] = 'Fv';
+               grid[doorY][bx-1] = 'T'; // bumpers
+               grid[doorY][bx+1] = 'T';
+               grid[doorY+1][bx] = ' ';
+               const secDir = Math.random() > 0.5 ? 'F>' : 'F<';
+               if (doorY + 2 < h - 1) {
+                   grid[doorY+2][bx] = secDir;
+                   const clearDir = secDir === 'F>' ? 1 : -1;
+                   if (bx + clearDir > 0 && bx + clearDir < w - 1) {
+                       grid[doorY+2][bx + clearDir] = ' ';
+                   }
+               }
+           } else {
+               if (doorY > split.yStart + 2) {
+                  grid[doorY][bx] = 'F^';
+                  grid[doorY][bx-1] = 'T';
+                  grid[doorY][bx+1] = 'T';
+                  grid[doorY-1][bx] = ' ';
+                  const secDir = Math.random() > 0.5 ? 'F>' : 'F<';
+                  if (doorY - 2 > 0) {
+                      grid[doorY-2][bx] = secDir;
+                      const clearDir = secDir === 'F>' ? 1 : -1;
+                      if (bx + clearDir > 0 && bx + clearDir < w - 1) {
+                          grid[doorY-2][bx + clearDir] = ' ';
+                      }
+                  }
+               } else {
+                  grid[doorY][bx] = 'Fv';
+                  grid[doorY][bx-1] = 'T';
+                  grid[doorY][bx+1] = 'T';
+                  grid[doorY+1][bx] = ' ';
+                  const secDir = Math.random() > 0.5 ? 'F>' : 'F<';
+                  if (doorY + 2 < h - 1) {
+                      grid[doorY+2][bx] = secDir;
+                      const clearDir = secDir === 'F>' ? 1 : -1;
+                      if (bx + clearDir > 0 && bx + clearDir < w - 1) {
+                          grid[doorY+2][bx + clearDir] = ' ';
+                      }
+                  }
                }
            }
-           if (pocketY >= 0 && pocketY < h && ['T', 'L', ' '].includes(grid[pocketY][bx])) grid[pocketY][bx] = ' ';
-           grid[foxY][bx] = isTop ? 'Fv' : 'F^';
-
-        } else if (lockType === 'PORCUPINE_SIGHT') {
-           grid[doorY][bx] = ' ';
-           const placeAbove = doorY > split.yStart + 2;
-           const maxDist = placeAbove ? Math.min(doorY - split.yStart - 1, 4) : Math.min(split.yEnd - doorY - 1, 4);
-           const dist = Math.min(maxDist, Math.max(2, Math.floor(Math.random() * maxDist) + 1));
-           const pY = placeAbove ? doorY - dist : doorY + dist;
-           const startY = Math.min(doorY, pY);
-           const endY = Math.max(doorY, pY);
-           for (let y = startY; y <= endY; y++) {
-               if (y !== doorY) {
-                   if (['T', 'L', ' '].includes(grid[y][bx])) grid[y][bx] = ' ';
-                   if (grid[y][bx + 1] !== 'W' && grid[y][bx + 1] !== 'E') grid[y][bx + 1] = 'T';
+        } else if (lockType === 'FOX_SLIDE') {
+           const isTop = Math.random() > 0.5 && doorY < split.yEnd - 1;
+           if (isTop) {
+               grid[doorY][bx] = 'Fv';
+               grid[doorY+1][bx] = ' ';
+           } else {
+               if (doorY > split.yStart + 1) {
+                  grid[doorY][bx] = 'F^';
+                  grid[doorY-1][bx] = ' ';
+               } else {
+                  grid[doorY][bx] = 'Fv';
+                  grid[doorY+1][bx] = ' ';
                }
            }
-           if (['T', 'L', ' '].includes(grid[pY][bx - 1])) grid[pY][bx - 1] = ' ';
-           grid[pY][bx] = placeAbove ? 'Pv' : 'P^';
-
         } else if (lockType === 'BEAVER_CLEAR') {
-           grid[doorY][bx] = 'T';
-           const placeAbove = doorY > split.yStart + 2;
-           const maxDist = placeAbove ? Math.min(doorY - split.yStart - 1, 4) : Math.min(split.yEnd - doorY - 1, 4);
-           const dist = Math.min(maxDist, Math.max(2, Math.floor(Math.random() * maxDist) + 1));
-           const bY = placeAbove ? doorY - dist : doorY + dist;
-           const startY = Math.min(doorY, bY);
-           const endY = Math.max(doorY, bY);
-           for (let y = startY; y <= endY; y++) {
-               if (y !== doorY) {
-                   if (['T', 'L', ' '].includes(grid[y][bx])) grid[y][bx] = ' ';
-                   if (grid[y][bx + 1] !== 'W' && grid[y][bx + 1] !== 'E') grid[y][bx + 1] = 'T';
+           const isLeft = Math.random() > 0.5;
+           let dist = Math.floor(Math.random() * 4) + 1;
+           if (isLeft) {
+               let d = 1;
+               while (d <= dist) {
+                  if (bx - d <= 0) break;
+                  if (grid[doorY][bx - d] !== ' ') break;
+                  d++;
                }
+               d--;
+               if (d < 1) d = 1;
+               grid[doorY][bx - d] = 'B>';
+               grid[doorY][bx] = 'T';
+           } else {
+               let d = 1;
+               while (d <= dist) {
+                  if (bx + d >= w - 1) break;
+                  if (grid[doorY][bx + d] !== ' ') break;
+                  d++;
+               }
+               d--;
+               if (d < 1) d = 1;
+               grid[doorY][bx + d] = 'B<';
+               grid[doorY][bx] = 'T';
            }
-           if (['T', 'L', ' '].includes(grid[bY][bx - 1])) grid[bY][bx - 1] = ' ';
-           grid[bY][bx] = placeAbove ? 'Bv' : 'B^';
-
         } else if (lockType === 'PORCUPINE_WARREN') {
            grid[doorY][bx] = 'T'; 
            grid[doorY][bx - 1] = 'W';
            grid[doorY][bx + 1] = 'W';
-           const placeAbove = doorY > split.yStart + 2;
+           const placeAbove = Math.random() > 0.5;
            const side = bx - 1;
-           const throwSpace = bx - 2;
-           const maxDist = placeAbove ? Math.min(doorY - split.yStart - 1, 4) : Math.min(split.yEnd - doorY - 1, 4);
-           const dist = Math.min(maxDist, Math.max(2, Math.floor(Math.random() * maxDist) + 1));
-           const pY = placeAbove ? doorY - dist : doorY + dist;
-           const startY = Math.min(doorY, pY);
-           const endY = Math.max(doorY, pY);
-           for (let y = startY; y <= endY; y++) {
-               if (y !== doorY && ['T', 'L', ' '].includes(grid[y][side])) {
-                   grid[y][side] = ' ';
-               }
+           let dist = 1;
+           while (dist < 4) {
+               const checkY = placeAbove ? doorY - dist : doorY + dist;
+               if (checkY < 0 || checkY >= h || grid[checkY][side] !== ' ') break;
+               dist++;
            }
-           if (throwSpace > 0 && throwSpace < w && ['T', 'L', ' '].includes(grid[pY][throwSpace])) grid[pY][throwSpace] = ' ';
+           dist--;
+           if (dist < 1) dist = 1;
+           let pY = placeAbove ? doorY - dist : doorY + dist;
+           if (pY < 1) pY = 1;
+           if (pY > h - 2) pY = h - 2;
            grid[pY][side] = placeAbove ? 'Pv' : 'P^';
+
+        } else if (lockType === 'FOX_WARREN') {
+           grid[doorY][bx] = 'T'; 
+           grid[doorY][bx - 1] = 'W';
+           grid[doorY][bx + 1] = 'W';
+           const placeAbove = Math.random() > 0.5;
+           const side = bx - 1;
+           let dist = 1;
+           while (dist < 4) {
+               const checkY = placeAbove ? doorY - dist : doorY + dist;
+               if (checkY < 0 || checkY >= h || grid[checkY][side] !== ' ') break;
+               dist++;
+           }
+           dist--;
+           if (dist < 1) dist = 1; 
+           let fY = placeAbove ? doorY - dist : doorY + dist;
+           if (fY < 1) fY = 1;
+           if (fY > h - 2) fY = h - 2;
+           const slidePastY = placeAbove ? doorY + 1 : doorY - 1;
+           if (slidePastY > 0 && slidePastY < h - 1 && ['T', 'L', ' '].includes(grid[slidePastY][side])) {
+               grid[slidePastY][side] = ' ';
+           }
+           grid[fY][side] = placeAbove ? 'Fv' : 'F^';
         }
       } else {
         // Horizontal split
         const by = split.by;
         const doorX = Math.floor(Math.random() * (split.xEnd - split.xStart - 1)) + split.xStart + 1;
-
-        if (lockType === 'FOX_SLIDE') {
-           grid[by][doorX] = ' ';
-           const isLeft = Math.random() > 0.5 && doorX > split.xStart + 1;
-           const foxX = isLeft ? split.xStart : split.xEnd;
-           const step = isLeft ? 1 : -1;
-           const pocketX = doorX + step;
-           const startX = Math.min(foxX, pocketX);
-           const endX = Math.max(foxX, pocketX);
-           for (let x = startX; x <= endX; x++) {
-               if (x !== doorX) {
-                   if (['T', 'L', ' '].includes(grid[by][x])) grid[by][x] = ' ';
-                   if (grid[by + 1][x] !== 'W' && grid[by + 1][x] !== 'E') grid[by + 1][x] = 'T';
+        if (lockType === 'COMPOUND_SLIDE') {
+           const isLeft = Math.random() > 0.5 && doorX < split.xEnd - 2;
+           if (isLeft) {
+               grid[by][doorX] = 'F>';
+               grid[by-1][doorX] = 'T'; // bumpers
+               grid[by+1][doorX] = 'T';
+               grid[by][doorX+1] = ' ';
+               const secDir = Math.random() > 0.5 ? 'Fv' : 'F^';
+               if (doorX + 2 < w - 1) {
+                   grid[by][doorX+2] = secDir;
+                   const clearDir = secDir === 'Fv' ? 1 : -1;
+                   if (by + clearDir > 0 && by + clearDir < h - 1) {
+                       grid[by + clearDir][doorX+2] = ' ';
+                   }
+               }
+           } else {
+               if (doorX > split.xStart + 2) {
+                  grid[by][doorX] = 'F<';
+                  grid[by-1][doorX] = 'T';
+                  grid[by+1][doorX] = 'T';
+                  grid[by][doorX-1] = ' ';
+                  const secDir = Math.random() > 0.5 ? 'Fv' : 'F^';
+                  if (doorX - 2 > 0) {
+                      grid[by][doorX-2] = secDir;
+                      const clearDir = secDir === 'Fv' ? 1 : -1;
+                      if (by + clearDir > 0 && by + clearDir < h - 1) {
+                          grid[by + clearDir][doorX-2] = ' ';
+                      }
+                  }
+               } else {
+                  grid[by][doorX] = 'F>';
+                  grid[by-1][doorX] = 'T';
+                  grid[by+1][doorX] = 'T';
+                  grid[by][doorX+1] = ' ';
+                  const secDir = Math.random() > 0.5 ? 'Fv' : 'F^';
+                  if (doorX + 2 < w - 1) {
+                      grid[by][doorX+2] = secDir;
+                      const clearDir = secDir === 'Fv' ? 1 : -1;
+                      if (by + clearDir > 0 && by + clearDir < h - 1) {
+                          grid[by + clearDir][doorX+2] = ' ';
+                      }
+                  }
                }
            }
-           if (pocketX >= 0 && pocketX < w && ['T', 'L', ' '].includes(grid[by][pocketX])) grid[by][pocketX] = ' ';
-           grid[by][foxX] = isLeft ? 'F>' : 'F<';
-           
-        } else if (lockType === 'PORCUPINE_SIGHT') {
-           grid[by][doorX] = ' ';
-           const placeLeft = doorX > split.xStart + 2;
-           const maxDist = placeLeft ? Math.min(doorX - split.xStart - 1, 4) : Math.min(split.xEnd - doorX - 1, 4);
-           const dist = Math.min(maxDist, Math.max(2, Math.floor(Math.random() * maxDist) + 1));
-           const pX = placeLeft ? doorX - dist : doorX + dist;
-           const startX = Math.min(doorX, pX);
-           const endX = Math.max(doorX, pX);
-           for (let x = startX; x <= endX; x++) {
-               if (x !== doorX) {
-                   if (['T', 'L', ' '].includes(grid[by][x])) grid[by][x] = ' ';
-                   if (grid[by + 1][x] !== 'W' && grid[by + 1][x] !== 'E') grid[by + 1][x] = 'T';
+        } else if (lockType === 'FOX_SLIDE') {
+           const isLeft = Math.random() > 0.5 && doorX < split.xEnd - 1;
+           if (isLeft) {
+               grid[by][doorX] = 'F>';
+               grid[by][doorX+1] = ' ';
+           } else {
+               if (doorX > split.xStart + 1) {
+                  grid[by][doorX] = 'F<';
+                  grid[by][doorX-1] = ' ';
+               } else {
+                  grid[by][doorX] = 'F>';
+                  grid[by][doorX+1] = ' ';
                }
            }
-           if (['T', 'L', ' '].includes(grid[by - 1][pX])) grid[by - 1][pX] = ' ';
-           grid[by][pX] = placeLeft ? 'P>' : 'P<';
-
         } else if (lockType === 'BEAVER_CLEAR') {
-           grid[by][doorX] = 'T';
-           const placeLeft = doorX > split.xStart + 2;
-           const maxDist = placeLeft ? Math.min(doorX - split.xStart - 1, 4) : Math.min(split.xEnd - doorX - 1, 4);
-           const dist = Math.min(maxDist, Math.max(2, Math.floor(Math.random() * maxDist) + 1));
-           const bX = placeLeft ? doorX - dist : doorX + dist;
-           const startX = Math.min(doorX, bX);
-           const endX = Math.max(doorX, bX);
-           for (let x = startX; x <= endX; x++) {
-               if (x !== doorX) {
-                   if (['T', 'L', ' '].includes(grid[by][x])) grid[by][x] = ' ';
-                   if (grid[by + 1][x] !== 'W' && grid[by + 1][x] !== 'E') grid[by + 1][x] = 'T';
-               }
-           }
-           if (['T', 'L', ' '].includes(grid[by - 1][bX])) grid[by - 1][bX] = ' ';
-           grid[by][bX] = placeLeft ? 'B>' : 'B<';
-
-        } else if (lockType === 'PORCUPINE_WARREN') {
+            const isTop = Math.random() > 0.5;
+            let dist = Math.floor(Math.random() * 4) + 1; // 1 to 4 tiles away
+            if (isTop) {
+                let d = 1;
+                while (d <= dist) {
+                   if (by - d <= 0) break;
+                   if (grid[by - d][doorX] !== ' ') break;
+                   d++;
+                }
+                d--;
+                if (d < 1) d = 1;
+                grid[by - d][doorX] = 'Bv';
+                grid[by][doorX] = 'T';
+            } else {
+                let d = 1;
+                while (d <= dist) {
+                   if (by + d >= h - 1) break;
+                   if (grid[by + d][doorX] !== ' ') break;
+                   d++;
+                }
+                d--;
+                if (d < 1) d = 1;
+                grid[by + d][doorX] = 'B^';
+                grid[by][doorX] = 'T';
+            }
+         } else if (lockType === 'PORCUPINE_WARREN') {
            grid[by][doorX] = 'T';
            grid[by - 1][doorX] = 'W';
            grid[by + 1][doorX] = 'W';
-           const placeLeft = doorX > split.xStart + 2;
+           const placeLeft = Math.random() > 0.5;
            const side = by - 1;
-           const throwSpace = by - 2;
-           const maxDist = placeLeft ? Math.min(doorX - split.xStart - 1, 4) : Math.min(split.xEnd - doorX - 1, 4);
-           const dist = Math.min(maxDist, Math.max(2, Math.floor(Math.random() * maxDist) + 1));
-           const pX = placeLeft ? doorX - dist : doorX + dist;
-           const startX = Math.min(doorX, pX);
-           const endX = Math.max(doorX, pX);
-           for (let x = startX; x <= endX; x++) {
-               if (x !== doorX && ['T', 'L', ' '].includes(grid[side][x])) {
-                   grid[side][x] = ' ';
-               }
+           let dist = 1;
+           while (dist < 4) {
+               const checkX = placeLeft ? doorX - dist : doorX + dist;
+               if (checkX < 0 || checkX >= w || grid[side][checkX] !== ' ') break;
+               dist++;
            }
-           if (throwSpace > 0 && throwSpace < h && ['T', 'L', ' '].includes(grid[throwSpace][pX])) grid[throwSpace][pX] = ' ';
+           dist--;
+           if (dist < 1) dist = 1;
+           let pX = placeLeft ? doorX - dist : doorX + dist;
+           if (pX < 1) pX = 1;
+           if (pX > w - 2) pX = w - 2;
            grid[side][pX] = placeLeft ? 'P>' : 'P<';
+
+        } else if (lockType === 'FOX_WARREN') {
+           grid[by][doorX] = 'T';
+           grid[by - 1][doorX] = 'W';
+           grid[by + 1][doorX] = 'W';
+           const placeLeft = Math.random() > 0.5;
+           const side = by - 1;
+           let dist = 1;
+           while (dist < 4) {
+               const checkX = placeLeft ? doorX - dist : doorX + dist;
+               if (checkX < 0 || checkX >= w || grid[side][checkX] !== ' ') break;
+               dist++;
+           }
+           dist--;
+           if (dist < 1) dist = 1;
+           let fX = placeLeft ? doorX - dist : doorX + dist;
+           if (fX < 1) fX = 1;
+           if (fX > w - 2) fX = w - 2;
+           const slidePastX = placeLeft ? doorX + 1 : doorX - 1;
+           if (slidePastX > 0 && slidePastX < w - 1 && ['T', 'L', ' '].includes(grid[side][slidePastX])) {
+               grid[side][slidePastX] = ' ';
+           }
+           grid[side][fX] = placeLeft ? 'F>' : 'F<';
         }
+
       } 
     } 
 
-    let totalEggs = numLocks + 2;
+    let totalEggs = numSplits + 3;
     let placedEggs = 0;
-    let attemptsList = 0;
-    while(placedEggs < totalEggs && attemptsList < 200) {
-       attemptsList++;
+    
+    const shuffledRooms = [...rooms].sort(() => Math.random() - 0.5);
+    
+    // Evaluate coverage to avoid placing nests in fox lines of sight or bear footprint
+    const mockState = { width: w, height: h, grid, rabbit: {x: -1, y: -1} };
+    const initialCoverage = Engine.getAnimalCoverage(mockState);
+    
+    for (const r of shuffledRooms) {
+        if (placedEggs >= totalEggs) break;
+        
+        let attemptsList = 0;
+        let roomPlaced = false;
+        while (!roomPlaced && attemptsList < 20) {
+            attemptsList++;
+            let rx = Math.floor(Math.random() * r.rw) + r.rx;
+            let ry = Math.floor(Math.random() * r.rh) + r.ry;
+            
+            if (grid[ry][rx] === ' ' && !initialCoverage[`${rx},${ry}`]) {
+                if ((rx === 1 && ry === 1) || (rx === w-2 && ry === h-2)) continue;
+                grid[ry][rx] = 'N';
+                placedEggs++;
+                roomPlaced = true;
+                
+                if (Math.random() > 0.4) {
+                    let bearPlaced = false;
+                    for (let dy = -2; dy <= 2 && !bearPlaced; dy++) {
+                      for (let dx = -2; dx <= 2 && !bearPlaced; dx++) {
+                         if (Math.abs(dx) <= 1 && Math.abs(dy) <= 1) continue;
+                         if (Math.random() > 0.7) {
+                            const nx = rx + dx, ny = ry + dy;
+                            if (nx > 0 && ny > 0 && nx < w-1 && ny < h-1 && grid[ny][nx] === ' ') {
+                               grid[ny][nx] = 'M';
+                               bearPlaced = true;
+                            }
+                         }
+                      }
+                    }
+                }
+            }
+        }
+    }
+    
+    let globalAttempts = 0;
+    while(placedEggs < totalEggs && globalAttempts < 200) {
+       globalAttempts++;
        let rx = Math.floor(Math.random() * (w - 2)) + 1;
        let ry = Math.floor(Math.random() * (h - 2)) + 1;
-       if (grid[ry][rx] === ' ') {
+       if (grid[ry][rx] === ' ' && !initialCoverage[`${rx},${ry}`]) {
            if ((rx === 1 && ry === 1) || (rx === w-2 && ry === h-2)) continue;
            grid[ry][rx] = 'N';
            placedEggs++;
-           if (Math.random() > 0.5) {
-               let bearPlaced = false;
-               for (let dy = -1; dy <= 1 && !bearPlaced; dy++) {
-                 for (let dx = -1; dx <= 1 && !bearPlaced; dx++) {
-                    if (Math.random() > 0.7) {
-                       const nx = rx + dx, ny = ry + dy;
-                       if (nx > 0 && ny > 0 && nx < w-1 && ny < h-1 && grid[ny][nx] === ' ') {
-                          grid[ny][nx] = 'M';
-                          bearPlaced = true;
-                       }
-                    }
-                 }
-               }
-           }
        }
     }
 

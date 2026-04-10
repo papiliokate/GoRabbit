@@ -37,26 +37,26 @@ export class Engine {
       state.eggs++;
       state.grid[newY][newX] = ' ';
     }
+    // Check death at the entrance cell before teleporting!
+    const originalRabbit = { ...state.rabbit };
+    state.rabbit.x = newX;
+    state.rabbit.y = newY;
+    this.checkDeathConditions(state);
+
+    if (state.gameOver) return state;
 
     if (targetCell[0] === 'W') {
       const paired = this.findOtherWarren(state, newX, newY);
       if (paired) {
         state.rabbit.x = paired.x;
         state.rabbit.y = paired.y;
-      } else {
-        state.rabbit.x = newX;
-        state.rabbit.y = newY;
+        this.checkDeathConditions(state);
       }
-    } else {
-      state.rabbit.x = newX;
-      state.rabbit.y = newY;
     }
 
     if (targetCell[0] === 'E') {
       state.gameOver = true;
       state.win = true;
-    } else {
-      this.checkDeathConditions(state);
     }
 
     return state;
@@ -66,10 +66,18 @@ export class Engine {
     if (state.eggs <= 0) return state;
     if (tx === state.rabbit.x && ty === state.rabbit.y) return state;
 
+    const targetChar = state.grid[ty][tx][0];
+    // Only allow throwing at valid locks
+    if (!['B', 'F', 'P'].includes(targetChar)) {
+      return state;
+    }
+
     const path = this.getLine(state.rabbit.x, state.rabbit.y, tx, ty);
     for (const pt of path) {
       if (pt.x === state.rabbit.x && pt.y === state.rabbit.y) continue;
-      if (state.grid[pt.y][pt.x][0] === 'T' && (pt.x !== tx || pt.y !== ty)) {
+      const cellType = state.grid[pt.y][pt.x][0];
+      // Blocked by anything that isn't empty space or the target itself
+      if (cellType !== ' ' && (pt.x !== tx || pt.y !== ty)) {
         return state; // Blocked
       }
     }
@@ -178,9 +186,9 @@ export class Engine {
         return;
       }
       if (nextCell !== ' ' && nextCell[0] !== 'E' && nextCell[0] !== 'W') {
-        if (destroyTrees && nextCell[0] === 'T') {
+        if (destroyTrees && (nextCell[0] === 'T' || nextCell[0] === 'L')) {
           state.grid[ny][nx] = ' ';
-          return; // Beaver destroys the tree and itself
+          return; // Beaver destroys the tree/log and itself
         } else {
           state.grid[cy][cx] = entityChar + dir;
           return;
@@ -223,7 +231,7 @@ export class Engine {
 
           const nextCell = state.grid[ny][nx];
           if (nextCell !== ' ' && nextCell[0] !== 'E' && nextCell[0] !== 'W') {
-            if (destroyTrees && nextCell[0] === 'T') {
+            if (destroyTrees && (nextCell[0] === 'T' || nextCell[0] === 'L')) {
               add(nx, ny, type);
               break; // Stops sliding past the eaten tree
             } else {
