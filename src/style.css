@@ -1,0 +1,209 @@
+:root {
+  --cell-size: 50px;
+  --bg-dark: #0f172a;
+  --panel-bg: rgba(30, 41, 59, 0.7);
+  --accent: #38bdf8;
+  --accent-glow: rgba(56, 189, 248, 0.4);
+  --text: #f1f5f9;
+  --easy: #4ade80;
+  --medium: #facc15;
+  --hard: #f43f5e;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  background-color: var(--bg-dark);
+  background-image:
+    radial-gradient(at 0% 0%, rgba(56, 189, 248, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%),
+    url('/bg.png');
+  /* Maintain the user's bg image if it exists */
+  background-size: cover;
+  color: var(--text);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+#game-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px;
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+header {
+  text-align: center;
+  width: 100%;
+}
+
+h1 {
+  margin: 0 0 15px 0;
+  font-size: 2.2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #fff 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
+}
+
+button:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: var(--accent);
+  box-shadow: 0 0 15px var(--accent-glow);
+}
+
+.diff-btn[data-diff="easy"] {
+  border-left: 4px solid var(--easy);
+}
+
+.diff-btn[data-diff="medium"] {
+  border-left: 4px solid var(--medium);
+}
+
+.diff-btn[data-diff="hard"] {
+  border-left: 4px solid var(--hard);
+}
+
+#hint-btn {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  color: white;
+  border: none;
+}
+
+#status {
+  height: 24px;
+  font-size: 1rem;
+  color: var(--accent);
+  margin-bottom: 2px;
+  font-weight: 500;
+  text-shadow: 0 0 10px var(--accent-glow);
+}
+
+#inventory {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-bottom: 4px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+#board {
+  display: grid;
+  gap: 2px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  /* Tilted-top-down (keeps bottom edge parallel to screen) */
+  transform: rotateX(55deg);
+  transform-origin: top center;
+  transform-style: preserve-3d;
+  box-shadow: 0 40px 60px rgba(0, 0, 0, 0.5);
+  transition: transform 0.5s ease;
+}
+
+.cell {
+  width: var(--cell-size);
+  height: var(--cell-size);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transform-style: preserve-3d;
+}
+
+.cell:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.entity-sprite {
+  font-size: 2.2rem;
+  /* Counter-rotate to billboard (upright) */
+  transform: rotateX(-55deg) translateY(-15px);
+  display: inline-block;
+  user-select: none;
+  filter: drop-shadow(0 8px 10px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+}
+
+.direction-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  font-size: 0.9rem;
+  transform: translate(-50%, -50%) rotateX(-55deg) translateY(-40px);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+/* Bouncing animation removed per user request */
+
+/* Specific glows */
+.cell[data-entity="E"] {
+  background: rgba(74, 222, 128, 0.05);
+}
+
+.cell[data-entity="W"] {
+  animation: portal-pulse 2s infinite ease-in-out;
+}
+
+@keyframes portal-pulse {
+  0% {
+    box-shadow: inset 0 0 10px rgba(168, 85, 247, 0.2);
+  }
+
+  50% {
+    box-shadow: inset 0 0 25px rgba(168, 85, 247, 0.5);
+  }
+
+  100% {
+    box-shadow: inset 0 0 10px rgba(168, 85, 247, 0.2);
+  }
+}
+
+.coord-label {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.3);
+  pointer-events: none;
+  font-family: monospace;
+}
