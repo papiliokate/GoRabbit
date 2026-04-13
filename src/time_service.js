@@ -14,7 +14,9 @@ export class TimeService {
             const localSysDate = new Date();
             
             this.serverClientOffsetMs = serverDate.getTime() - localSysDate.getTime();
-            this.currentUtcDateStr = data.datetime.split('T')[0]; // Extracted YYYY-MM-DD
+            // Shift date by 1 minute so the generated seed date string is previous day until 00:01
+            const adjustedDate = new Date(serverDate.getTime() - 60000);
+            this.currentUtcDateStr = adjustedDate.toISOString().split('T')[0]; // Extracted YYYY-MM-DD
             this.lastFetchTime = Date.now();
             return this.currentUtcDateStr;
 
@@ -23,7 +25,8 @@ export class TimeService {
             // Fallback to local clock UTC representation if API fails
             const fallbackDate = new Date();
             this.serverClientOffsetMs = 0;
-            this.currentUtcDateStr = fallbackDate.toISOString().split('T')[0];
+            const adjustedFallback = new Date(fallbackDate.getTime() - 60000);
+            this.currentUtcDateStr = adjustedFallback.toISOString().split('T')[0];
             return this.currentUtcDateStr;
         }
     }

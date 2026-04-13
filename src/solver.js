@@ -80,7 +80,7 @@ export class Solver {
 
   static getStateKey(state) {
     // A more compact key: rabbit_pos | eggs | lettuce | grid_hash
-    const gridHash = state.grid.map(row => row.join('')).join('|');
+    const gridHash = state.grid.map(row => row.join(',')).join('|');
     return `${state.rabbit.x},${state.rabbit.y}|${state.eggs}|${state.lettuce}|${gridHash}`;
   }
 }

@@ -8,19 +8,88 @@ export const DIRS = {
 };
 
 export class Engine {
-  static getNextState(state, action) {
-    if (state.gameOver) return state;
+  static cloneState(state) {
+    return {
+      width: state.width,
+      height: state.height,
+      grid: state.grid.map(row => [...row]),
+      rabbit: { ...state.rabbit },
+      eggs: state.eggs,
+      lettuce: state.lettuce,
+      moveCount: state.moveCount,
+      gameOver: state.gameOver,
+      win: state.win,
+      events: []
+    };
+  }
 
-    const newState = JSON.parse(JSON.stringify(state)); // Deep clone for immutability
-    newState.events = [];
+  static getNextState(state, action) {
+    if (state.gameOver || state.win) return state;
 
     if (action.type === 'MOVE') {
+      const originalX = state.rabbit.x;
+      const originalY = state.rabbit.y;
+      const newX = originalX + action.dx;
+      const newY = originalY + action.dy;
+
+      if (newX < 0 || newX >= state.width || newY < 0 || newY >= state.height) return state;
+
+      const targetCell = state.grid[newY][newX];
+      if (targetCell !== ' ' && IMPASSABLE.includes(targetCell[0])) return state;
+
+      const newState = this.cloneState(state);
       return this.handleMove(newState, action.dx, action.dy);
     } else if (action.type === 'THROW') {
-      return this.handleThrow(newState, action.tx, action.ty, action.item);
+      const { tx, ty, item } = action;
+      if (tx === state.rabbit.x && ty === state.rabbit.y) return state;
+
+      const targetChar = state.grid[ty][tx][0];
+      
+      if (item === 'egg') {
+        if (state.eggs <= 0) return state;
+        if (!['B', 'F', 'P'].includes(targetChar)) return state;
+      } else if (item === 'lettuce') {
+        if (state.lettuce <= 0) return state;
+        if (targetChar !== ' ') return state;
+      } else {
+        return state;
+      }
+
+      const path = this.getLine(state.rabbit.x, state.rabbit.y, tx, ty);
+      for (const pt of path) {
+        if (pt.x === state.rabbit.x && pt.y === state.rabbit.y) continue;
+        const cellType = state.grid[pt.y][pt.x][0];
+        if (cellType !== ' ' && cellType !== 'W' && (pt.x !== tx || pt.y !== ty)) {
+          return state; // Blocked
+        }
+      }
+
+      if (item === 'lettuce') {
+          let foundTurtle = null;
+          for (const [dirKey, dir] of Object.entries(DIRS)) {
+            let cx = tx + dir.dx;
+            let cy = ty + dir.dy;
+            while(cx >= 0 && cx < state.width && cy >= 0 && cy < state.height) {
+              const cell = state.grid[cy][cx];
+              if (cell[0] === 'U') {
+                 foundTurtle = true;
+                 break;
+              } else if (cell !== ' ') {
+                 break; // Blocked
+              }
+              cx += dir.dx;
+              cy += dir.dy;
+            }
+            if (foundTurtle) break;
+          }
+          if (!foundTurtle) return state; // Invalid throw, no turtle attracted
+      }
+
+      const newState = this.cloneState(state);
+      return this.handleThrow(newState, tx, ty, item);
     }
 
-    return newState;
+    return state;
   }
 
   static handleMove(state, dx, dy) {

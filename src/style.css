@@ -86,17 +86,6 @@ button:hover, button.active {
   border-color: var(--text);
 }
 
-.diff-btn[data-diff="easy"] {
-  border-left: 6px solid var(--easy);
-}
-
-.diff-btn[data-diff="medium"] {
-  border-left: 6px solid var(--medium);
-}
-
-.diff-btn[data-diff="hard"] {
-  border-left: 6px solid var(--hard);
-}
 
 #hint-btn {
   background: #deb887;
@@ -243,14 +232,14 @@ button:hover, button.active {
   background: rgba(107, 142, 35, 0.1);
 }
 
-.cell[data-entity="W"] {
+.dynamic-entity.portal-pulse .entity-sprite {
   animation: portal-pulse 2s infinite ease-in-out;
 }
 
 @keyframes portal-pulse {
-  0% { box-shadow: inset 0 0 5px var(--portal-color, rgba(168, 85, 247, 0.4)); }
-  50% { box-shadow: inset 0 0 15px var(--portal-color, rgba(168, 85, 247, 0.7)); }
-  100% { box-shadow: inset 0 0 5px var(--portal-color, rgba(168, 85, 247, 0.4)); }
+  0% { filter: drop-shadow(0 0 2px var(--portal-color)) drop-shadow(0 0 2px var(--portal-color)); }
+  50% { filter: drop-shadow(0 0 8px var(--portal-color)) drop-shadow(0 0 8px var(--portal-color)); }
+  100% { filter: drop-shadow(0 0 2px var(--portal-color)) drop-shadow(0 0 2px var(--portal-color)); }
 }
 
 /* coordinate labels removed */
@@ -315,7 +304,8 @@ button:hover, button.active {
 }
 
 #daily-countdown {
-  font-size: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
   color: var(--medium);
   margin-bottom: 10px;
   font-weight: bold;

@@ -132,7 +132,7 @@ export class GameMode {
       map = tutorialMap.map(row => [...row]);
       solution = [];
     } else {
-      const gen = Generator.generate(difficulty);
+      const gen = Generator.generate(difficulty, true);
       map = gen.map;
       solution = gen.solution;
     }
@@ -558,7 +558,7 @@ export class GameMode {
                const sprite = el.querySelector('.entity-sprite');
                if (sprite) {
                    const type = el.dataset.entity;
-                   const emojiMap = { 'R': '🐇', 'F': '🦊', 'B': '🦫', 'M': '🐻', 'P': '🦔', 'U': '🐢', 'E': '🚪', 'T': '🌲', 'L': '🪵', 'W': '🕳️', 'X': '☠️', 'N': '🪹', 'EGG': '🥚', 'C': '🥬' };
+                   const emojiMap = { 'R': '🐇', 'F': '🦊', 'B': '🦫', 'M': '🐻', 'P': '🦔', 'U': '🐢', 'E': '🚪', 'T': '🌲', 'L': '🪵', 'W': '🕳️', 'X': '☠️', 'N': '🪺', 'EGG': '🥚', 'C': '🥬' };
                    sprite.innerHTML = emojiMap[type] || type;
                    
                    const dirSpan = el.querySelector('.direction-indicator');
@@ -659,7 +659,7 @@ export class GameMode {
     const { width, height, grid, rabbit, gameOver } = this.state;
     let autoId = 0;
 
-    const visualMap = { 'R': '🐇', 'F': '🦊', 'B': '🦫', 'M': '🐻', 'P': '🦔', 'U': '🐢', 'E': '🚪', 'T': '🌲', 'L': '🪵', 'W': '🕳️', 'X': '☠️', 'N': '🪹', 'EGG': '🥚', 'C': '🥬' };
+    const visualMap = { 'R': '🐇', 'F': '🦊', 'B': '🦫', 'M': '🐻', 'P': '🦔', 'U': '🐢', 'E': '🚪', 'T': '🌲', 'L': '🪵', 'W': '🕳️', 'X': '☠️', 'N': '🪺', 'EGG': '🥚', 'C': '🥬' };
 
     const createEntity = (x, y, char, id) => {
         const type = char[0];
@@ -683,7 +683,7 @@ export class GameMode {
         sprite.className = 'entity-sprite';
         
         let facingStr = 'scaleX(1)';
-        if (char.length > 1 && ['^', 'v', '<', '>'].includes(char[1])) {
+        if (type !== 'U' && char.length > 1 && ['^', 'v', '<', '>'].includes(char[1])) {
             const dirSpan = document.createElement('span');
             dirSpan.className = 'direction-indicator';
             dirSpan.textContent = { '^': '↑', 'v': '↓', '<': '←', '>': '→' }[char[1]];
