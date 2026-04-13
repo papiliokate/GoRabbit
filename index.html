@@ -9,5 +9,20 @@
   <body>
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+      import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-analytics.js";
+      const firebaseConfig = {
+        projectId: "go-rabbit-4af82",
+        appId: "1:746967187087:web:d2413f9cb46efae41cbafa",
+        storageBucket: "go-rabbit-4af82.firebasestorage.app",
+        apiKey: "AIzaSyDgeMPAM9aKivOPLBuF_Fqm8uhedO5jeYc",
+        authDomain: "go-rabbit-4af82.firebaseapp.com",
+        messagingSenderId: "746967187087",
+        measurementId: "G-BJLK9339LN"
+      };
+      const app = initializeApp(firebaseConfig);
+      const analytics = getAnalytics(app);
+    </script>
   </body>
 </html>
