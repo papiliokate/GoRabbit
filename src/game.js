@@ -25,6 +25,7 @@ export class GameMode {
     this.handleTouchStartBound = this.handleTouchStart.bind(this);
     this.handleTouchEndBound = this.handleTouchEnd.bind(this);
     this.preventScrollBound = (e) => { e.preventDefault(); };
+    this.adjustScaleBound = this.adjustScale.bind(this);
 
     this.touchStartX = 0;
     this.touchStartY = 0;
@@ -158,9 +159,34 @@ export class GameMode {
       this.boardEl.addEventListener("touchstart", this.handleTouchStartBound, { passive: false });
       this.boardEl.addEventListener("touchend", this.handleTouchEndBound, { passive: false });
       this.boardEl.addEventListener("touchmove", this.preventScrollBound, { passive: false }); // Prevent scroll when swiping on board
+      window.addEventListener("resize", this.adjustScaleBound);
 
       this.boundEvents = true;
     }
+    
+    this.adjustScale();
+  }
+
+  adjustScale() {
+     if (!this.state || !this.state.width) return;
+     
+     const header = document.querySelector('header');
+     const isMobile = window.innerWidth <= 800;
+     
+     const paddingOffset = isMobile ? 32 : 80;
+     const availableWidth = window.innerWidth - paddingOffset;
+     const headerHeight = header && isMobile ? header.offsetHeight : 0;
+     // On desktop, the header is side-by-side. On mobile, it's above.
+     const availableHeight = window.innerHeight - (isMobile ? headerHeight + 50 : 80);
+     
+     const maxCellWidth = availableWidth / this.state.width;
+     const maxCellHeight = availableHeight / this.state.height;
+     
+     let cellSize = Math.min(60, maxCellWidth, maxCellHeight);
+     if (cellSize < 15) cellSize = 15; // floor boundary
+     
+     document.documentElement.style.setProperty('--cell-size', `${cellSize}px`);
+     document.documentElement.style.setProperty('--sprite-size', `${cellSize * 0.75}px`);
   }
 
   handleKeyDown(event) {
