@@ -103,9 +103,16 @@ menuToggle.addEventListener('click', () => {
 async function run() {
     await TimeService.fetchTime();
     setInterval(() => {
+        if (TimeService.checkNeedRefresh()) {
+            countdownEl.textContent = "Loading new puzzles...";
+            location.reload();
+            return;
+        }
         countdownEl.textContent = TimeService.getNextResetTimeStr();
     }, 1000);
-    countdownEl.textContent = TimeService.getNextResetTimeStr();
+    if (!TimeService.checkNeedRefresh()) {
+        countdownEl.textContent = TimeService.getNextResetTimeStr();
+    }
 
     // Start with small by default
     document.querySelector('.diff-btn[data-diff="small"]').classList.add('active');

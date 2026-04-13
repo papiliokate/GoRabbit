@@ -6,7 +6,7 @@ export class TimeService {
     static async fetchTime() {
         try {
             // Fetch current UTC time from a reliable external API
-            const response = await fetch('http://worldtimeapi.org/api/timezone/Etc/UTC');
+            const response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC', { cache: 'no-store' });
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             
@@ -69,5 +69,15 @@ export class TimeService {
         const sStr = seconds.toString().padStart(2, '0');
 
         return `New puzzles in.. ${hStr}:${mStr}:${sStr} (Local: ${nextReset.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
+    }
+
+    static checkNeedRefresh() {
+        if (!this.currentUtcDateStr) return false;
+        
+        const now = new Date(Date.now() + this.serverClientOffsetMs);
+        const adjustedDate = new Date(now.getTime() - 60000);
+        const liveUtcDateStr = adjustedDate.toISOString().split('T')[0];
+        
+        return liveUtcDateStr !== this.currentUtcDateStr;
     }
 }
