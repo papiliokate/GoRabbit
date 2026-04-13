@@ -5,30 +5,35 @@ import { Random } from './random.js';
 
 document.querySelector('#app').innerHTML = `
   <div id="game-container">
-    <header>
-      <h1>Go Rabbit - Daily Puzzles</h1>
-      <div class="controls">
-        <button class="diff-btn" data-diff="tutorial">Tutorial</button>
-        <button class="diff-btn" data-diff="small">Small</button>
-        <button class="diff-btn" data-diff="medium">Medium</button>
-        <button class="diff-btn" data-diff="large">Large</button>
-        <button class="diff-btn" data-diff="extra_large">Extra Large</button>
-        <button id="reset-btn">Reset</button>
+    <header id="game-header">
+      <div id="collapsible-menu">
+        <h1>Go Rabbit - Daily Puzzles</h1>
+        <div class="controls">
+          <button class="diff-btn" data-diff="tutorial">Tutorial</button>
+          <button class="diff-btn" data-diff="small">Small</button>
+          <button class="diff-btn" data-diff="medium">Medium</button>
+          <button class="diff-btn" data-diff="large">Large</button>
+          <button class="diff-btn" data-diff="extra_large">Extra Large</button>
+          <button id="reset-btn">Reset</button>
+        </div>
+        <div id="daily-countdown">Connecting to Time Service...</div>
       </div>
-      <div id="daily-countdown">Connecting to Time Service...</div>
-      <div id="status">Select a difficulty to start!</div>
-      <div id="inventory">Eggs: 0 | Lettuce: 0 | Moves: 0</div>
-      <div class="timer-wrapper">
-        <div class="timer-title">Set and beat your best time.</div>
-        <div class="timer-display-group">
-            <div class="current-time-box">
-                <div class="time-label">Current</div>
-                <div id="timer">00:00.0</div>
-            </div>
-            <div class="best-time-box">
-                <div class="time-label">Best Today</div>
-                <div id="best-timer">--:--.-</div>
-            </div>
+      <div id="hud-panel">
+        <button id="menu-toggle">▼ Menu</button>
+        <div id="status">Select a difficulty to start!</div>
+        <div id="inventory">Eggs: 0 | Lettuce: 0 | Moves: 0</div>
+        <div class="timer-wrapper">
+          <div class="timer-title">Set and beat your best time.</div>
+          <div class="timer-display-group">
+              <div class="current-time-box">
+                  <div class="time-label">Current</div>
+                  <div id="timer">00:00.0</div>
+              </div>
+              <div class="best-time-box">
+                  <div class="time-label">Best Today</div>
+                  <div id="best-timer">--:--.-</div>
+              </div>
+          </div>
         </div>
       </div>
     </header>
@@ -86,6 +91,13 @@ document.querySelectorAll('.diff-btn').forEach(btn => {
 
 resetBtn.addEventListener('click', () => {
   game.reset();
+});
+
+const menuToggle = document.getElementById('menu-toggle');
+const headerEl = document.getElementById('game-header');
+menuToggle.addEventListener('click', () => {
+  headerEl.classList.remove('collapsed');
+  setTimeout(() => game.adjustScale(), 10);
 });
 
 async function run() {

@@ -94,6 +94,41 @@ button:hover, button.active {
   color: #3c2a21;
 }
 
+#menu-toggle {
+  display: none;
+  background: var(--easy);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin: 0 auto 10px auto;
+  cursor: pointer;
+  box-shadow: 0px 4px 0px #456b2c;
+}
+
+#menu-toggle:active {
+  transform: translateY(4px);
+  box-shadow: 0px 0px 0px #456b2c;
+}
+
+#game-header.collapsed #collapsible-menu {
+  display: none;
+}
+
+#game-header.collapsed #menu-toggle {
+  display: block;
+}
+
+#hud-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
 #status {
   height: 24px;
   font-size: 1.1rem;
