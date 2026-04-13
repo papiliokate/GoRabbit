@@ -548,7 +548,7 @@ export class GameMode {
                const sprite = el.querySelector('.entity-sprite');
                if (sprite) {
                    const type = el.dataset.entity;
-                   const emojiMap = { 'R': '🐇', 'F': '🦊', 'B': '🦫', 'M': '🐻', 'P': '🦔', 'U': '🐢', 'E': '🚪', 'T': '🌲', 'L': '🪵', 'W': '🕳️', 'X': '☠️', 'N': '🪺', 'EGG': '🥚', 'C': '🥬' };
+                   const emojiMap = { 'R': '🐇', 'F': '🦊', 'B': '🦫', 'M': '🐻', 'P': '🦔', 'U': '🐢', 'E': '⛩️', 'T': '🌲', 'L': '🪵', 'W': '🕳️', 'X': '☠️', 'N': '🪺', 'EGG': '🥚', 'C': '🥬' };
                    sprite.innerHTML = emojiMap[type] || type;
                    
                    const dirSpan = el.querySelector('.direction-indicator');
@@ -649,7 +649,7 @@ export class GameMode {
     const { width, height, grid, rabbit, gameOver } = this.state;
     let autoId = 0;
 
-    const visualMap = { 'R': '🐇', 'F': '🦊', 'B': '🦫', 'M': '🐻', 'P': '🦔', 'U': '🐢', 'E': '🚪', 'T': '🌲', 'L': '🪵', 'W': '🕳️', 'X': '☠️', 'N': '🪺', 'EGG': '🥚', 'C': '🥬' };
+    const visualMap = { 'R': '🐇', 'F': '🦊', 'B': '🦫', 'M': '🐻', 'P': '🦔', 'U': '🐢', 'E': '⛩️', 'T': '🌲', 'L': '🪵', 'W': '🕳️', 'X': '☠️', 'N': '🪺', 'EGG': '🥚', 'C': '🥬' };
 
     const createEntity = (x, y, char, id) => {
         const type = char[0];

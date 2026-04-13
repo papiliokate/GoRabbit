@@ -257,16 +257,16 @@ button:hover, button.active {
 
 .direction-indicator {
   position: absolute;
-  top: -15px;
-  right: -15px;
-  font-size: 0.9rem;
+  top: calc(var(--sprite-size) * -0.4);
+  right: calc(var(--sprite-size) * -0.4);
+  font-size: calc(var(--sprite-size) * 0.4);
   font-weight: bold;
   background: var(--bg-dark);
   color: var(--accent);
-  padding: 2px 6px;
-  border: 2px solid var(--text);
+  padding: 0.2em 0.5em;
+  border: calc(var(--sprite-size) * 0.05) solid var(--text);
   border-radius: 50%;
-  box-shadow: 0px 3px 0px var(--text);
+  box-shadow: 0px calc(var(--sprite-size) * 0.08) 0px var(--text);
   pointer-events: none;
   font-family: inherit;
   z-index: 20;
