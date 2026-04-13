@@ -178,19 +178,23 @@ export class GameMode {
   adjustScale() {
      if (!this.state || !this.state.width) return;
      
-     const header = document.querySelector('header');
+     const header = document.getElementById('game-header');
      const isMobile = window.innerWidth <= 800;
      
-     const paddingOffset = isMobile ? 32 : 80;
-     const availableWidth = window.innerWidth - paddingOffset;
+     const gapWidth = (this.state.width - 1) * 4;
+     const gapHeight = (this.state.height - 1) * 4;
+     
+     const paddingWidth = isMobile ? (window.innerWidth <= 480 ? 32 : 40) : 80;
+     const availableWidth = window.innerWidth - paddingWidth - gapWidth;
+     
      const headerHeight = header && isMobile ? header.offsetHeight : 0;
-     // On desktop, the header is side-by-side. On mobile, it's above.
-     const availableHeight = window.innerHeight - (isMobile ? headerHeight + 50 : 80);
+     const paddingHeight = isMobile ? 60 : 80;
+     const availableHeight = Math.max(100, window.innerHeight - headerHeight - paddingHeight - gapHeight);
      
      const maxCellWidth = availableWidth / this.state.width;
      const maxCellHeight = availableHeight / this.state.height;
      
-     let cellSize = Math.min(60, maxCellWidth, maxCellHeight);
+     let cellSize = Math.min(100, maxCellWidth, maxCellHeight);
      if (cellSize < 15) cellSize = 15; // floor boundary
      
      document.documentElement.style.setProperty('--cell-size', `${cellSize}px`);
