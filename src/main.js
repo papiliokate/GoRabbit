@@ -37,7 +37,9 @@ document.querySelector('#app').innerHTML = `
         </div>
       </div>
     </header>
-    <main id="board"></main>
+    <div class="board-wrapper">
+      <main id="board"></main>
+    </div>
   </div>
   <div id="tutorial-modal" class="modal" style="display: none;">
     <div class="modal-content">

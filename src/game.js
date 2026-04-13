@@ -22,13 +22,8 @@ export class GameMode {
 
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleBoardClick = this.handleBoardClick.bind(this);
-    this.handleTouchStartBound = this.handleTouchStart.bind(this);
-    this.handleTouchEndBound = this.handleTouchEnd.bind(this);
-    this.preventScrollBound = (e) => { e.preventDefault(); };
     this.adjustScaleBound = this.adjustScale.bind(this);
 
-    this.touchStartX = 0;
-    this.touchStartY = 0;
     this.isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
     this.audioContext = null;
@@ -155,10 +150,6 @@ export class GameMode {
       this.boardEl.addEventListener("click", this.handleBoardClick);
       this.boardEl.addEventListener("contextmenu", (e) => e.preventDefault());
       
-      // Touch Support
-      this.boardEl.addEventListener("touchstart", this.handleTouchStartBound, { passive: false });
-      this.boardEl.addEventListener("touchend", this.handleTouchEndBound, { passive: false });
-      this.boardEl.addEventListener("touchmove", this.preventScrollBound, { passive: false }); // Prevent scroll when swiping on board
       window.addEventListener("resize", this.adjustScaleBound);
 
       this.boundEvents = true;
@@ -230,49 +221,6 @@ export class GameMode {
     this.actionQueue = []; // Cancel any movement to prefer immediate WASD movement
     this.startTimerIfFirstMove();
     this.applyAction({ type: 'MOVE', dx, dy });
-  }
-
-  handleTouchStart(e) {
-    if (e.target.closest('button')) return;
-    this.collapseHeader();
-    this.touchStartX = e.changedTouches[0].screenX;
-    this.touchStartY = e.changedTouches[0].screenY;
-  }
-
-  handleTouchEnd(e) {
-    if (e.target.closest('button')) return;
-    const touchEndX = e.changedTouches[0].screenX;
-    const touchEndY = e.changedTouches[0].screenY;
-    
-    const dx = touchEndX - this.touchStartX;
-    const dy = touchEndY - this.touchStartY;
-    
-    // Tap detection - if movement is very small, we ignore it here because handleBoardClick gets the click event
-    if (Math.abs(dx) < 30 && Math.abs(dy) < 30) {
-        return;
-    }
-
-    if (this.state.gameOver || this.isAnimating) return;
-
-    if (this.audioContext && this.audioContext.state === 'suspended') {
-      this.audioContext.resume();
-      this.audioInitialized = true;
-    } else {
-      this.audioInitialized = true;
-    }
-
-    this.startTimerIfFirstMove();
-
-    let moveX = 0, moveY = 0;
-    if (Math.abs(dx) > Math.abs(dy)) {
-        if (dx > 0) moveX = 1;
-        else moveX = -1;
-    } else {
-        if (dy > 0) moveY = 1;
-        else moveY = -1;
-    }
-    
-    this.applyAction({ type: 'MOVE', dx: moveX, dy: moveY });
   }
 
   startTimerIfFirstMove() {

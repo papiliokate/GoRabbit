@@ -21,8 +21,7 @@ body {
   background-color: var(--bg-dark);
   color: var(--text);
   display: flex;
-  justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
   overflow: auto;
 }
@@ -40,6 +39,15 @@ body {
   outline-offset: -12px;
   box-shadow: 10px 10px 0px rgba(42, 31, 26, 0.15);
   max-width: 95vw;
+  margin: auto; /* Centering replacement for body flex center */
+}
+
+.board-wrapper {
+  max-width: 100%;
+  overflow: auto;
+  border-radius: 12px;
+  /* Allow panning even if we are swiping */
+  touch-action: pan-x pan-y pinch-zoom;
 }
 
 header {
