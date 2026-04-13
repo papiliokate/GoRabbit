@@ -1,4 +1,4 @@
-export const IMPASSABLE = ['T', 'L', 'F', 'B', 'P', 'M'];
+export const IMPASSABLE = ['T', 'L', 'F', 'B', 'P', 'M', 'U'];
 
 export const DIRS = {
   '^': { dx: 0, dy: -1 },
@@ -12,19 +12,22 @@ export class Engine {
     if (state.gameOver) return state;
 
     const newState = JSON.parse(JSON.stringify(state)); // Deep clone for immutability
+    newState.events = [];
 
     if (action.type === 'MOVE') {
       return this.handleMove(newState, action.dx, action.dy);
     } else if (action.type === 'THROW') {
-      return this.handleThrow(newState, action.tx, action.ty);
+      return this.handleThrow(newState, action.tx, action.ty, action.item);
     }
 
     return newState;
   }
 
   static handleMove(state, dx, dy) {
-    const newX = state.rabbit.x + dx;
-    const newY = state.rabbit.y + dy;
+    const originalX = state.rabbit.x;
+    const originalY = state.rabbit.y;
+    const newX = originalX + dx;
+    const newY = originalY + dy;
 
     if (newX < 0 || newX >= state.width || newY < 0 || newY >= state.height) return state;
 
@@ -36,11 +39,18 @@ export class Engine {
     if (targetCell[0] === 'N') {
       state.eggs++;
       state.grid[newY][newX] = ' ';
+      state.events.push({ type: 'pickup', item: 'egg', x: newX, y: newY });
+    } else if (targetCell[0] === 'C') {
+      state.lettuce++;
+      state.grid[newY][newX] = ' ';
+      state.events.push({ type: 'pickup', item: 'lettuce', x: newX, y: newY });
     }
     // Check death at the entrance cell before teleporting!
     const originalRabbit = { ...state.rabbit };
     state.rabbit.x = newX;
     state.rabbit.y = newY;
+    state.events.push({ type: 'move', entity: 'R', start: {x: originalX, y: originalY}, end: {x: newX, y: newY} });
+    
     this.checkDeathConditions(state);
 
     if (state.gameOver) return state;
@@ -50,6 +60,7 @@ export class Engine {
       if (paired) {
         state.rabbit.x = paired.x;
         state.rabbit.y = paired.y;
+        state.events.push({ type: 'teleport', entity: 'R', start: {x: newX, y: newY}, end: {x: paired.x, y: paired.y} });
         this.checkDeathConditions(state);
       }
     }
@@ -62,13 +73,23 @@ export class Engine {
     return state;
   }
 
-  static handleThrow(state, tx, ty) {
-    if (state.eggs <= 0) return state;
+  static handleThrow(state, tx, ty, item = 'egg') {
     if (tx === state.rabbit.x && ty === state.rabbit.y) return state;
 
     const targetChar = state.grid[ty][tx][0];
-    // Only allow throwing at valid locks
-    if (!['B', 'F', 'P'].includes(targetChar)) {
+    
+    if (item === 'egg') {
+      if (state.eggs <= 0) return state;
+      // Only allow throwing at valid locks
+      if (!['B', 'F', 'P'].includes(targetChar)) {
+        return state;
+      }
+    } else if (item === 'lettuce') {
+      if (state.lettuce <= 0) return state;
+      if (targetChar !== ' ') {
+        return state;
+      }
+    } else {
       return state;
     }
 
@@ -76,15 +97,58 @@ export class Engine {
     for (const pt of path) {
       if (pt.x === state.rabbit.x && pt.y === state.rabbit.y) continue;
       const cellType = state.grid[pt.y][pt.x][0];
-      // Blocked by anything that isn't empty space or the target itself
-      if (cellType !== ' ' && (pt.x !== tx || pt.y !== ty)) {
+      // Blocked by anything that isn't empty space or a Hole, and isn't the target itself
+      if (cellType !== ' ' && cellType !== 'W' && (pt.x !== tx || pt.y !== ty)) {
         return state; // Blocked
       }
     }
 
-    state.eggs--;
-    state.moveCount++;
-    this.processEggHit(state, tx, ty);
+    if (item === 'lettuce') {
+      let foundTurtle = null;
+      for (const [dirKey, dir] of Object.entries(DIRS)) {
+        let cx = tx + dir.dx;
+        let cy = ty + dir.dy;
+        while(cx >= 0 && cx < state.width && cy >= 0 && cy < state.height) {
+          const cell = state.grid[cy][cx];
+          if (cell[0] === 'U') {
+             foundTurtle = { x: cx, y: cy, char: cell, moveDir: 
+                  (dir.dx === -1 ? '>' : dir.dx === 1 ? '<' : dir.dy === -1 ? 'v' : '^') 
+             };
+             break;
+          } else if (cell !== ' ') {
+             break; // Blocked
+          }
+          cx += dir.dx;
+          cy += dir.dy;
+        }
+        if (foundTurtle) break;
+      }
+
+      if (!foundTurtle) return state; // Invalid throw, no turtle attracted
+      
+      state.lettuce--;
+      state.moveCount++;
+      state.events.push({ type: 'throw', item: 'lettuce', start: { x: state.rabbit.x, y: state.rabbit.y }, end: { x: tx, y: ty } });
+
+      let turtlePath = [];
+      let tx2 = foundTurtle.x, ty2 = foundTurtle.y;
+      const {dx, dy} = DIRS[foundTurtle.moveDir];
+      while(tx2 !== tx || ty2 !== ty) {
+          turtlePath.push({x: tx2, y: ty2});
+          tx2 += dx; ty2 += dy;
+      }
+      turtlePath.push({x: tx, y: ty});
+      state.events.push({ type: 'slide', entity: 'U', path: turtlePath });
+      state.events.push({ type: 'eat', x: tx, y: ty, target: 'lettuce' });
+
+      state.grid[foundTurtle.y][foundTurtle.x] = ' ';
+      state.grid[ty][tx] = 'U' + foundTurtle.moveDir;
+    } else {
+      state.eggs--;
+      state.moveCount++;
+      state.events.push({ type: 'throw', item: 'egg', start: { x: state.rabbit.x, y: state.rabbit.y }, end: { x: tx, y: ty } });
+      this.processEggHit(state, tx, ty);
+    }
 
     if (!state.gameOver) {
       this.checkDeathConditions(state);
@@ -94,9 +158,10 @@ export class Engine {
   }
 
   static findOtherWarren(state, tx, ty) {
+    const currentChar = state.grid[ty][tx];
     for (let y = 0; y < state.height; y++) {
       for (let x = 0; x < state.width; x++) {
-        if (state.grid[y][x][0] === 'W' && (x !== tx || y !== ty)) {
+        if (state.grid[y][x] === currentChar && (x !== tx || y !== ty)) {
           return { x, y };
         }
       }
@@ -161,6 +226,7 @@ export class Engine {
 
   static processEggHit(state, x, y) {
     const char = state.grid[y][x];
+    state.events.push({ type: 'splat', x, y });
     if (char[0] === 'B') {
       state.grid[y][x] = ' ';
       this.moveEntityLinear(state, x, y, char[1], true, 'B');
@@ -170,31 +236,43 @@ export class Engine {
     } else if (char[0] === 'P') {
       const nextDir = { '^': '>', '>': 'v', 'v': '<', '<': '^' }[char[1]];
       state.grid[y][x] = 'P' + nextDir;
+      state.events.push({ type: 'turn', entity: 'P', x, y, dir: nextDir });
     }
   }
 
   static moveEntityLinear(state, startX, startY, dir, destroyTrees, entityChar) {
     const { dx, dy } = DIRS[dir];
     let cx = startX, cy = startY;
+    let path = [{x: cx, y: cy}];
     while (true) {
       const nx = cx + dx, ny = cy + dy;
-      if (nx < 0 || nx >= state.width || ny < 0 || ny >= state.height) return;
+      if (nx < 0 || nx >= state.width || ny < 0 || ny >= state.height) {
+        state.events.push({ type: 'slide', entity: entityChar, path });
+        return;
+      }
 
       const nextCell = state.grid[ny][nx];
       if (nx === state.rabbit.x && ny === state.rabbit.y) {
+        path.push({x: nx, y: ny});
+        state.events.push({ type: 'slide', entity: entityChar, path });
         if (entityChar === 'F') state.gameOver = true;
         return;
       }
       if (nextCell !== ' ' && nextCell[0] !== 'E' && nextCell[0] !== 'W') {
         if (destroyTrees && (nextCell[0] === 'T' || nextCell[0] === 'L')) {
+          path.push({x: nx, y: ny});
+          state.events.push({ type: 'slide', entity: entityChar, path });
+          state.events.push({ type: 'chew', x: nx, y: ny, target: nextCell[0] });
           state.grid[ny][nx] = ' ';
           return; // Beaver destroys the tree/log and itself
         } else {
+          state.events.push({ type: 'slide', entity: entityChar, path });
           state.grid[cy][cx] = entityChar + dir;
           return;
         }
       }
       cx = nx; cy = ny;
+      path.push({x: cx, y: cy});
     }
   }
 

@@ -43,12 +43,30 @@ export class Solver {
           for (let x = 0; x < state.width; x++) {
             const char = state.grid[y][x];
             if (['B', 'F', 'P'].includes(char[0])) {
-              const nextState = Engine.getNextState(state, { type: 'THROW', tx: x, ty: y });
+              const nextState = Engine.getNextState(state, { type: 'THROW', tx: x, ty: y, item: 'egg' });
               if ((nextState.win || !nextState.gameOver) && nextState.moveCount > state.moveCount) {
                 const key = this.getStateKey(nextState);
                 if (!visited.has(key)) {
                   visited.add(key);
-                  queue.push({ state: nextState, path: [...path, { type: 'THROW', tx: x, ty: y }] });
+                  queue.push({ state: nextState, path: [...path, { type: 'THROW', tx: x, ty: y, item: 'egg' }] });
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Try Throws if we have lettuce
+      if (state.lettuce > 0) {
+        for (let y = 0; y < state.height; y++) {
+          for (let x = 0; x < state.width; x++) {
+            if (state.grid[y][x] === ' ') {
+              const nextState = Engine.getNextState(state, { type: 'THROW', tx: x, ty: y, item: 'lettuce' });
+              if ((nextState.win || !nextState.gameOver) && nextState.moveCount > state.moveCount) {
+                const key = this.getStateKey(nextState);
+                if (!visited.has(key)) {
+                  visited.add(key);
+                  queue.push({ state: nextState, path: [...path, { type: 'THROW', tx: x, ty: y, item: 'lettuce' }] });
                 }
               }
             }
@@ -61,8 +79,8 @@ export class Solver {
   }
 
   static getStateKey(state) {
-    // A more compact key: rabbit_pos | eggs | grid_hash
+    // A more compact key: rabbit_pos | eggs | lettuce | grid_hash
     const gridHash = state.grid.map(row => row.join('')).join('|');
-    return `${state.rabbit.x},${state.rabbit.y}|${state.eggs}|${gridHash}`;
+    return `${state.rabbit.x},${state.rabbit.y}|${state.eggs}|${state.lettuce}|${gridHash}`;
   }
 }

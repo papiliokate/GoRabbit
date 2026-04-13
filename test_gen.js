@@ -6,7 +6,7 @@ async function run() {
   
   for (const diff of difficulties) {
     console.log(`\n=== GENERATING ${diff.toUpperCase()} PUZZLE ===`);
-    const { map } = Generator.generate(diff);
+    const { map } = Generator.generate(diff, true);
     const state = Generator.mapToState(map);
     
     // Use very high iteration count for Hard puzzles in script
