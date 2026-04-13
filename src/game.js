@@ -117,6 +117,9 @@ export class GameMode {
     this.actionHistory = [];
     if (this.timerEl) this.timerEl.textContent = "00:00.0";
     
+    const hudShareBtn = document.getElementById('hud-share');
+    if (hudShareBtn) hudShareBtn.style.display = 'none';
+    
     this.bestTimeKey = `bestToday-${TimeService.currentUtcDateStr || 'dev'}-${difficulty}`;
     const bestMs = localStorage.getItem(this.bestTimeKey);
     if (bestMs && this.bestTimerEl) {
@@ -436,6 +439,7 @@ export class GameMode {
     const textEl = document.getElementById('victory-text');
     const nextBtn = document.getElementById('victory-next');
     const shareBtn = document.getElementById('victory-share');
+    const hudShareBtn = document.getElementById('hud-share');
     
     if (modal && textEl && nextBtn) {
         textEl.innerHTML = `Completed in <strong>${this.state.moveCount} moves</strong>!<br/>Time: <strong>${this.totalTimeStr}</strong>`;
@@ -444,10 +448,13 @@ export class GameMode {
         if (shareBtn) {
             shareBtn.textContent = "Share Result";
             shareBtn.onclick = () => {
-                this.copyShareText();
-                shareBtn.textContent = "Copied!";
-                setTimeout(() => shareBtn.textContent = "Share Result", 2000);
+                this.copyShareText(shareBtn);
             };
+        }
+        
+        if (hudShareBtn) {
+            hudShareBtn.style.display = 'block';
+            hudShareBtn.onclick = () => this.copyShareText(hudShareBtn);
         }
         
         nextBtn.onclick = () => {
@@ -456,7 +463,7 @@ export class GameMode {
     }
   }
 
-  copyShareText() {
+  copyShareText(btnEl) {
      let gridStr = "";
      for(let i=0; i<this.actionHistory.length; i++) {
          gridStr += this.actionHistory[i];
@@ -466,7 +473,21 @@ export class GameMode {
      
      const diffText = this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1).replace('_', ' ');
      const text = `Go Rabbit - Daily ${diffText}\n${this.state.moveCount} Moves\n\n${gridStr}\nPlay: https://go-rabbit-4af82.web.app`;
-     navigator.clipboard.writeText(text).catch(err => console.warn("Clipboard failed", err));
+     
+     if (navigator.share) {
+         navigator.share({
+             title: 'Go Rabbit Daily',
+             text: text
+         }).catch(err => console.warn("Share failed", err));
+     } else {
+         navigator.clipboard.writeText(text).then(() => {
+             if (btnEl) {
+                 const oldText = btnEl.textContent;
+                 btnEl.textContent = "Copied!";
+                 setTimeout(() => btnEl.textContent = oldText, 2000);
+             }
+         }).catch(err => console.warn("Clipboard failed", err));
+     }
   }
 
   applyAction(action) {

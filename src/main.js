@@ -54,6 +54,7 @@ document.querySelector('#app').innerHTML = `
                   <div id="best-timer">--:--.-</div>
               </div>
           </div>
+          <button id="hud-share" style="display: none; background-color: var(--medium); margin-top: 10px; width: 100%;">Share Stats</button>
         </div>
       </div>
     </header>
