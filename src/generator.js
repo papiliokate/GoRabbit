@@ -527,6 +527,35 @@ export class Generator {
        }
     }
 
+    // --- WARREN NORMALIZATION ---
+    // Safety check to delete orphaned warrens (created if doors randomly overwrite each other) 
+    // and renumber remaining valid pairs sequentially so their dynamically-assigned DOM colors always match.
+    const warrenCounts = {};
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const char = grid[y][x];
+        if (char && char[0] === 'W') warrenCounts[char] = (warrenCounts[char] || 0) + 1;
+      }
+    }
+    
+    let nextWarrenId = 0;
+    const remappedWarrens = {};
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const char = grid[y][x];
+        if (char && char[0] === 'W') {
+          if (warrenCounts[char] !== 2) {
+             grid[y][x] = ' '; // Purge orphan
+          } else {
+             if (remappedWarrens[char] === undefined) {
+                 remappedWarrens[char] = nextWarrenId++;
+             }
+             grid[y][x] = 'W' + remappedWarrens[char];
+          }
+        }
+      }
+    }
+
     return grid;
   }
 
