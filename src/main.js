@@ -82,7 +82,10 @@ document.querySelector('#app').innerHTML = `
     <div class="modal-content victory-content">
       <h2 class="victory-title">Level Complete!</h2>
       <p id="victory-text"></p>
-      <button id="victory-next">Close</button>
+      <div style="display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 20px;">
+        <button id="victory-share" style="background-color: var(--medium); width: 200px;">Share Result</button>
+        <button id="victory-next" style="width: 200px;">Close</button>
+      </div>
     </div>
   </div>
 `;

@@ -18,6 +18,7 @@ export class GameMode {
     this.timerInterval = null;
     this.totalTimeStr = "00:00.0";
     this.isAnimating = false;
+    this.actionHistory = [];
     this.entityMap = new Map(); // Tracks entities by unique ID for animation
 
     this.handleKeyDown = this.handleKeyDown.bind(this);
@@ -113,6 +114,7 @@ export class GameMode {
     this.stopTimer();
     this.startTime = null;
     this.totalTimeStr = "00:00.0";
+    this.actionHistory = [];
     if (this.timerEl) this.timerEl.textContent = "00:00.0";
     
     this.bestTimeKey = `bestToday-${TimeService.currentUtcDateStr || 'dev'}-${difficulty}`;
@@ -433,10 +435,20 @@ export class GameMode {
     const modal = document.getElementById('victory-modal');
     const textEl = document.getElementById('victory-text');
     const nextBtn = document.getElementById('victory-next');
+    const shareBtn = document.getElementById('victory-share');
     
     if (modal && textEl && nextBtn) {
         textEl.innerHTML = `Completed in <strong>${this.state.moveCount} moves</strong>!<br/>Time: <strong>${this.totalTimeStr}</strong>`;
         modal.style.display = 'flex';
+        
+        if (shareBtn) {
+            shareBtn.textContent = "Share Result";
+            shareBtn.onclick = () => {
+                this.copyShareText();
+                shareBtn.textContent = "Copied!";
+                setTimeout(() => shareBtn.textContent = "Share Result", 2000);
+            };
+        }
         
         nextBtn.onclick = () => {
             modal.style.display = 'none';
@@ -444,9 +456,24 @@ export class GameMode {
     }
   }
 
+  copyShareText() {
+     let gridStr = "";
+     for(let i=0; i<this.actionHistory.length; i++) {
+         gridStr += this.actionHistory[i];
+         if ((i+1) % 5 === 0) gridStr += "\n";
+     }
+     if (this.state.win) gridStr += "⛩️\n";
+     
+     const diffText = this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1).replace('_', ' ');
+     const text = `Go Rabbit - Daily ${diffText}\n${this.state.moveCount} Moves\n\n${gridStr}\nPlay: https://go-rabbit-4af82.web.app`;
+     navigator.clipboard.writeText(text).catch(err => console.warn("Clipboard failed", err));
+  }
+
   applyAction(action) {
     const nextState = Engine.getNextState(this.state, action);
     if (nextState.moveCount > this.state.moveCount || nextState.gameOver !== this.state.gameOver) {
+      if (action.type === 'MOVE') this.actionHistory.push('🐾');
+      else if (action.type === 'THROW') this.actionHistory.push(action.item === 'egg' ? '🥚' : '🥬');
       if (nextState.events && nextState.events.length > 0) {
          this.isAnimating = true;
          this.playActionQueue(nextState.events, () => {
@@ -616,6 +643,7 @@ export class GameMode {
     this.stopTimer();
     this.startTime = null;
     this.totalTimeStr = "00:00.0";
+    this.actionHistory = [];
     if (this.timerEl) this.timerEl.textContent = "00:00.0";
     this.render();
     this.updateStatus(`Level Reset! Target moves: ${this.solution?.length || '?'}`);
