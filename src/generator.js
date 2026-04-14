@@ -42,21 +42,25 @@ export class Generator {
 
   static placeFarWarren(grid, wId, isVertical, split, emptyDoorX, emptyDoorY, w, h) {
       let farOptions = [];
-      if (isVertical) {
-          const bx = split.bx;
-          for (let yy = 1; yy < h - 1; yy++) {
-             for (let xx = bx + 1; xx < w - 1; xx++) {
-                if (grid[yy][xx] === ' ' && !(xx === bx + 1 && yy === emptyDoorY)) {
-                   farOptions.push({x: xx, y: yy});
-                }
-             }
+      const startX = isVertical ? split.bx + 1 : emptyDoorX;
+      const startY = isVertical ? emptyDoorY : split.by + 1;
+      
+      const visited = new Set();
+      const queue = [{x: startX, y: startY}];
+      visited.add(`${startX},${startY}`);
+      
+      while(queue.length > 0) {
+          const curr = queue.shift();
+          if (grid[curr.y][curr.x] === ' ' && !(curr.x === startX && curr.y === startY)) {
+             farOptions.push({x: curr.x, y: curr.y});
           }
-      } else {
-          const by = split.by;
-          for (let yy = by + 1; yy < h - 1; yy++) {
-             for (let xx = 1; xx < w - 1; xx++) {
-                if (grid[yy][xx] === ' ' && !(yy === by + 1 && xx === emptyDoorX)) {
-                   farOptions.push({x: xx, y: yy});
+          const dirs = [{dx: 1, dy: 0}, {dx: -1, dy: 0}, {dx: 0, dy: 1}, {dx: 0, dy: -1}];
+          for(let d of dirs) {
+             const nx = curr.x + d.dx, ny = curr.y + d.dy;
+             if (nx > 0 && nx < w - 1 && ny > 0 && ny < h - 1) {
+                if (!visited.has(`${nx},${ny}`) && (grid[ny][nx] === ' ' || grid[ny][nx] === 'E' || grid[ny][nx] === 'S' || (grid[ny][nx][0] === 'W'))) {
+                   visited.add(`${nx},${ny}`);
+                   queue.push({x: nx, y: ny});
                 }
              }
           }
@@ -66,8 +70,13 @@ export class Generator {
           const choice = farOptions[Math.floor(Random.next() * farOptions.length)];
           grid[choice.y][choice.x] = wId;
       } else {
-          if (isVertical) grid[emptyDoorY][split.bx + 1] = wId;
-          else grid[split.by + 1][emptyDoorX] = wId;
+          if (isVertical) {
+             if (split.bx + 2 < w - 1 && grid[emptyDoorY][split.bx + 2] === ' ') grid[emptyDoorY][split.bx + 2] = wId;
+             else grid[emptyDoorY][split.bx + 1] = wId;
+          } else {
+             if (split.by + 2 < h - 1 && grid[split.by + 2][emptyDoorX] === ' ') grid[split.by + 2][emptyDoorX] = wId;
+             else grid[split.by + 1][emptyDoorX] = wId;
+          }
       }
   }
 
@@ -144,7 +153,7 @@ export class Generator {
     
     // Add Locks at splits
     const baseTypes = ['FOX_SLIDE', 'BEAVER_CLEAR', 'PORCUPINE_WARREN'];
-    const types = useCompound ? [...baseTypes, 'COMPOUND_SLIDE', 'TURTLE_BLOCK', 'TURTLE_BLOCK', 'TURTLE_BLOCK'] : baseTypes;
+    const types = useCompound ? [...baseTypes, 'COMPOUND_SLIDE', 'COMPOUND_SLIDE', 'BEAVER_CLEAR', 'BEAVER_CLEAR', 'TURTLE_BLOCK', 'TURTLE_BLOCK'] : baseTypes;
 
     for (const split of splits) {
       if (split.type === 'V') {
@@ -160,7 +169,7 @@ export class Generator {
       }
     }
 
-    let totalEggs = numSplits + 3;
+    let totalEggs = Math.floor(numSplits * (useCompound ? 2 : 1)) + 4;
     let lettuceNeeded = 0;
     let warrenPairId = 0;
 
@@ -178,7 +187,8 @@ export class Generator {
                grid[doorY][bx-1] = 'T'; // bumpers
                grid[doorY][bx+1] = 'T';
                grid[doorY+1][bx] = ' ';
-               const secDir = Random.next() > 0.5 ? 'F>' : 'F<';
+               const secChar = Random.next() > 0.5 ? 'F' : 'P';
+               const secDir = Random.next() > 0.5 ? `${secChar}>` : `${secChar}<`;
                if (doorY + 2 < h - 1) {
                    grid[doorY+2][bx] = secDir;
                    const clearDir = secDir === 'F>' ? 1 : -1;
@@ -192,7 +202,8 @@ export class Generator {
                   grid[doorY][bx-1] = 'T';
                   grid[doorY][bx+1] = 'T';
                   grid[doorY-1][bx] = ' ';
-                  const secDir = Random.next() > 0.5 ? 'F>' : 'F<';
+                  const secChar = Random.next() > 0.5 ? 'F' : 'P';
+                  const secDir = Random.next() > 0.5 ? `${secChar}>` : `${secChar}<`;
                   if (doorY - 2 > 0) {
                       grid[doorY-2][bx] = secDir;
                       const clearDir = secDir === 'F>' ? 1 : -1;
@@ -205,7 +216,8 @@ export class Generator {
                   grid[doorY][bx-1] = 'T';
                   grid[doorY][bx+1] = 'T';
                   grid[doorY+1][bx] = ' ';
-                  const secDir = Random.next() > 0.5 ? 'F>' : 'F<';
+                  const secChar = Random.next() > 0.5 ? 'F' : 'P';
+                  const secDir = Random.next() > 0.5 ? `${secChar}>` : `${secChar}<`;
                   if (doorY + 2 < h - 1) {
                       grid[doorY+2][bx] = secDir;
                       const clearDir = secDir === 'F>' ? 1 : -1;
@@ -243,6 +255,13 @@ export class Generator {
                if (d < 1) d = 1;
                grid[doorY][bx - d] = 'B>';
                grid[doorY][bx] = 'T';
+               if (useCompound && Random.next() > 0.5) {
+                   const guardY = Random.next() > 0.5 ? doorY - 1 : doorY + 1;
+                   if (guardY > 0 && guardY < h - 1 && grid[guardY][bx-1] === ' ') {
+                       const secChar = Random.next() > 0.5 ? 'F' : 'P';
+                       grid[guardY][bx] = `${secChar}<`;
+                   }
+               }
            } else {
                let d = 1;
                while (d <= dist) {
@@ -254,6 +273,13 @@ export class Generator {
                if (d < 1) d = 1;
                grid[doorY][bx + d] = 'B<';
                grid[doorY][bx] = 'T';
+               if (useCompound && Random.next() > 0.5) {
+                   const guardY = Random.next() > 0.5 ? doorY - 1 : doorY + 1;
+                   if (guardY > 0 && guardY < h - 1 && grid[guardY][bx+1] === ' ') {
+                       const secChar = Random.next() > 0.5 ? 'F' : 'P';
+                       grid[guardY][bx] = `${secChar}>`;
+                   }
+               }
            }
         } else if (lockType === 'PORCUPINE_WARREN') {
            grid[doorY][bx] = 'T'; 
@@ -313,7 +339,8 @@ export class Generator {
                grid[by-1][doorX] = 'T'; // bumpers
                grid[by+1][doorX] = 'T';
                grid[by][doorX+1] = ' ';
-               const secDir = Random.next() > 0.5 ? 'Fv' : 'F^';
+               const secChar = Random.next() > 0.5 ? 'F' : 'P';
+               const secDir = Random.next() > 0.5 ? `${secChar}v` : `${secChar}^`;
                if (doorX + 2 < w - 1) {
                    grid[by][doorX+2] = secDir;
                    const clearDir = secDir === 'Fv' ? 1 : -1;
@@ -327,7 +354,8 @@ export class Generator {
                   grid[by-1][doorX] = 'T';
                   grid[by+1][doorX] = 'T';
                   grid[by][doorX-1] = ' ';
-                  const secDir = Random.next() > 0.5 ? 'Fv' : 'F^';
+                  const secChar = Random.next() > 0.5 ? 'F' : 'P';
+                  const secDir = Random.next() > 0.5 ? `${secChar}v` : `${secChar}^`;
                   if (doorX - 2 > 0) {
                       grid[by][doorX-2] = secDir;
                       const clearDir = secDir === 'Fv' ? 1 : -1;
@@ -340,7 +368,8 @@ export class Generator {
                   grid[by-1][doorX] = 'T';
                   grid[by+1][doorX] = 'T';
                   grid[by][doorX+1] = ' ';
-                  const secDir = Random.next() > 0.5 ? 'Fv' : 'F^';
+                  const secChar = Random.next() > 0.5 ? 'F' : 'P';
+                  const secDir = Random.next() > 0.5 ? `${secChar}v` : `${secChar}^`;
                   if (doorX + 2 < w - 1) {
                       grid[by][doorX+2] = secDir;
                       const clearDir = secDir === 'Fv' ? 1 : -1;
@@ -378,6 +407,13 @@ export class Generator {
                 if (d < 1) d = 1;
                 grid[by - d][doorX] = 'Bv';
                 grid[by][doorX] = 'T';
+                if (useCompound && Random.next() > 0.5) {
+                    const guardX = Random.next() > 0.5 ? doorX - 1 : doorX + 1;
+                    if (guardX > 0 && guardX < w - 1 && grid[by-1][guardX] === ' ') {
+                        const secChar = Random.next() > 0.5 ? 'F' : 'P';
+                        grid[by][guardX] = `${secChar}^`;
+                    }
+                }
             } else {
                 let d = 1;
                 while (d <= dist) {
@@ -389,6 +425,13 @@ export class Generator {
                 if (d < 1) d = 1;
                 grid[by + d][doorX] = 'B^';
                 grid[by][doorX] = 'T';
+                if (useCompound && Random.next() > 0.5) {
+                    const guardX = Random.next() > 0.5 ? doorX - 1 : doorX + 1;
+                    if (guardX > 0 && guardX < w - 1 && grid[by+1][guardX] === ' ') {
+                        const secChar = Random.next() > 0.5 ? 'F' : 'P';
+                        grid[by][guardX] = `${secChar}v`;
+                    }
+                }
             }
          } else if (lockType === 'PORCUPINE_WARREN') {
            grid[by][doorX] = 'T';

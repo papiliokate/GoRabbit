@@ -107,7 +107,7 @@ document.querySelectorAll('.diff-btn').forEach(btn => {
     e.target.classList.add('active');
     const diff = e.target.dataset.diff;
     if (diff !== 'tutorial' && TimeService.currentUtcDateStr) {
-        Random.setSeed(TimeService.currentUtcDateStr + "-" + diff);
+        Random.setSeed(TimeService.currentUtcDateStr + "-v3-" + diff);
     } else {
         Random.setSeed(null);
     }
@@ -143,7 +143,7 @@ async function run() {
     // Start with small by default
     document.querySelector('.diff-btn[data-diff="small"]').classList.add('active');
     if (TimeService.currentUtcDateStr) {
-        Random.setSeed(TimeService.currentUtcDateStr + "-small");
+        Random.setSeed(TimeService.currentUtcDateStr + "-v3-small");
     }
     game.init('small');
 }

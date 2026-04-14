@@ -2,7 +2,41 @@ import { Engine } from './engine.js';
 
 export class Solver {
   static solve(initialState, maxIterations = 15000) {
-    const queue = [{ state: initialState, path: [] }];
+    class PriorityQueue {
+      constructor() { this.heap = []; }
+      push(node) {
+        this.heap.push(node);
+        let i = this.heap.length - 1;
+        while (i > 0) {
+          let p = Math.floor((i - 1) / 2);
+          if (this.heap[p].f <= this.heap[i].f) break;
+          [this.heap[p], this.heap[i]] = [this.heap[i], this.heap[p]];
+          i = p;
+        }
+      }
+      pop() {
+        if (this.heap.length <= 1) return this.heap.pop();
+        const top = this.heap[0];
+        this.heap[0] = this.heap.pop();
+        let i = 0;
+        while (true) {
+          let left = 2 * i + 1, right = 2 * i + 2, min = i;
+          if (left < this.heap.length && this.heap[left].f < this.heap[min].f) min = left;
+          if (right < this.heap.length && this.heap[right].f < this.heap[min].f) min = right;
+          if (min === i) break;
+          [this.heap[i], this.heap[min]] = [this.heap[min], this.heap[i]];
+          i = min;
+        }
+        return top;
+      }
+      get length() { return this.heap.length; }
+    }
+
+    const pq = new PriorityQueue();
+    // Default target exit is universally at w-2, h-2
+    const getH = (state) => Math.abs(state.rabbit.x - (state.width - 2)) + Math.abs(state.rabbit.y - (state.height - 2));
+
+    pq.push({ state: initialState, path: [], f: getH(initialState) * 2 });
     const visited = new Set();
     
     // Initial state key
@@ -11,9 +45,9 @@ export class Solver {
     let count = 0;
     const MAX_ITERATIONS = maxIterations; 
 
-    while (queue.length > 0 && count < MAX_ITERATIONS) {
+    while (pq.length > 0 && count < MAX_ITERATIONS) {
       count++;
-      const { state, path } = queue.shift();
+      const { state, path } = pq.pop();
 
       if (state.win) return path;
 
@@ -31,7 +65,7 @@ export class Solver {
           const key = this.getStateKey(nextState);
           if (!visited.has(key)) {
             visited.add(key);
-            queue.push({ state: nextState, path: [...path, { type: 'MOVE', ...dir }] });
+            pq.push({ state: nextState, path: [...path, { type: 'MOVE', ...dir }], f: nextState.moveCount + getH(nextState) * 2 });
           }
         }
       }
@@ -48,7 +82,7 @@ export class Solver {
                 const key = this.getStateKey(nextState);
                 if (!visited.has(key)) {
                   visited.add(key);
-                  queue.push({ state: nextState, path: [...path, { type: 'THROW', tx: x, ty: y, item: 'egg' }] });
+                  pq.push({ state: nextState, path: [...path, { type: 'THROW', tx: x, ty: y, item: 'egg' }], f: nextState.moveCount + getH(nextState) * 2 });
                 }
               }
             }
@@ -66,7 +100,7 @@ export class Solver {
                 const key = this.getStateKey(nextState);
                 if (!visited.has(key)) {
                   visited.add(key);
-                  queue.push({ state: nextState, path: [...path, { type: 'THROW', tx: x, ty: y, item: 'lettuce' }] });
+                  pq.push({ state: nextState, path: [...path, { type: 'THROW', tx: x, ty: y, item: 'lettuce' }], f: nextState.moveCount + getH(nextState) * 2 });
                 }
               }
             }
