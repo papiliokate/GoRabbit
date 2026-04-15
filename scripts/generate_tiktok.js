@@ -60,7 +60,8 @@ async function main() {
         videoCrf: 18,
         videoCodec: 'libvpx',
         videoBitrate: 1000,
-        autopad: { color: 'black' }
+        autopad: { color: 'black' },
+        ffmpeg_Path: ffmpegInstaller.path
     });
     
     await recorder.start(RAW_VIDEO);
