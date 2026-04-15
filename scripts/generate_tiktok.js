@@ -1,5 +1,4 @@
-import puppeteer from 'puppeteer';
-import { getStream } from 'puppeteer-stream';
+import { launch, getStream } from 'puppeteer-stream';
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
@@ -31,7 +30,7 @@ async function main() {
     console.log("Assuming Server is ready!");
 
     // Launch Puppeteer with extension for puppeteer-stream
-    const browser = await puppeteer.launch({
+    const browser = await launch({
         headless: false,
         args: [
             '--window-size=1280,720',
