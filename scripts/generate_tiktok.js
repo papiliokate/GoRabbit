@@ -32,7 +32,7 @@ async function main() {
 
     // Launch Puppeteer with extension for puppeteer-stream
     const browser = await puppeteer.launch({
-        headless: process.env.HEADLESS === 'true' ? 'new' : false,
+        headless: false,
         args: [
             '--window-size=1280,720',
             '--autoplay-policy=no-user-gesture-required',
