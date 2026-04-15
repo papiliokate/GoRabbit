@@ -79,12 +79,15 @@ async function main() {
     await sleep(3000);
 
     console.log("Gameplay finished. Saving video...");
-    await new Promise((resolve) => {
-        recorder.on('close', resolve);
-        recorder.stdin.write('q\n');
-    });
+    // Send SIGINT to ffmpeg
+    recorder.kill('SIGINT');
     
+    // Force a screen update by closing the browser so x11grab unblocks
     await browser.close();
+    
+    // Now ffmpeg will cleanly process the signal and exit
+    await new Promise((resolve) => recorder.on('close', resolve));
+    
     server.kill();
 
     console.log("Compositing TikTok video using FFmpeg...");
