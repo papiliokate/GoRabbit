@@ -106,6 +106,7 @@ async function main() {
                 `[withtitle]drawtext=text='Can you solve Medium & Hard?':fontcolor=#38bdf8:fontsize=24:x=(w-text_w)/2:y=h-(h/5):borderw=2:bordercolor=black[final_v]`
             ])
             .outputOptions([
+                '-y',
                 '-map [final_v]',
                 '-map 1:a',
                 '-c:v libx264',
