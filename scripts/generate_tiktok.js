@@ -33,7 +33,9 @@ async function main() {
         headless: process.env.HEADLESS === 'true' ? 'new' : false,
         args: [
             '--window-size=1280,720',
-            '--autoplay-policy=no-user-gesture-required'
+            '--autoplay-policy=no-user-gesture-required',
+            '--no-sandbox',
+            '--disable-setuid-sandbox'
         ]
     });
 
