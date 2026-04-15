@@ -23,6 +23,9 @@ jobs:
       - name: Generate Maps
         run: npm run generate-maps
 
+      - name: Generate TikTok Video
+        run: npm run generate-tiktok
+
       - name: Build App
         run: npm run build
 

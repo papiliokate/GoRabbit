@@ -1,4 +1,5 @@
 import puppeteer from 'puppeteer';
+import { PuppeteerScreenRecorder } from 'puppeteer-screen-recorder';
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
@@ -8,10 +9,9 @@ import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const BGM_PATH = path.resolve('public/tiktok_bgm.mp3');
-const RAW_VIDEO = path.resolve('raw.webm');
+const RAW_VIDEO = path.resolve('raw.mp4');
 const FINAL_VIDEO = path.resolve('public/daily_tiktok.mp4');
 
-// Utility to sleep
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
@@ -23,51 +23,47 @@ async function main() {
     server.stderr.on('data', (data) => console.error("VITE ERROR:", data.toString()));
     server.stdout.on('data', (data) => console.log("VITE:", data.toString()));
 
-    // Wait 5 seconds unconditionally for Vite to start up
     console.log("Waiting 5 seconds for Vite dev server to boot...");
     await sleep(5000);
 
     console.log("Assuming Server is ready!");
 
-    // Launch Puppeteer natively
     const browser = await puppeteer.launch({
-        headless: process.env.HEADLESS === 'true' ? 'new' : false,
+        headless: 'new', // new headless mode is better for plugins/recorders
         args: [
             '--window-size=1280,720',
             '--autoplay-policy=no-user-gesture-required',
             '--no-sandbox',
-            '--disable-setuid-sandbox'
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage'
         ]
     });
 
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 720 });
     
+    const recorder = new PuppeteerScreenRecorder(page, {
+        fps: 30,
+        ffmpeg_Path: ffmpegInstaller.path,
+        videoFrame: {
+            width: 1280,
+            height: 720,
+        },
+        aspectRatio: '16:9',
+    });
+
     console.log("Navigating to game and starting recording...");
     try {
-        // Try to load, ignore timeout if it exceeds 30s, the page will just continue rendering in background
         await page.goto('http://127.0.0.1:5173/?autoplay=small', { waitUntil: 'domcontentloaded', timeout: 30000 });
     } catch (e) {
         console.warn("Navigation timeout reached, but we will wait for internal game completion flag.", e.message);
     }
 
-    console.log("Starting X11 FFmpeg screen recorder...");
-    // Fallback to :99 which is xvfb-run's default if DISPLAY isn't set
-    const displayPort = process.env.DISPLAY || ':99';
-    let ffmpegRecordCmd = 'ffmpeg';
-    // Use the fluent-ffmpeg installer path if needed, but 'ffmpeg' should be natively available via apt
-    
-    const recorder = spawn('ffmpeg', [
-        '-y', '-f', 'x11grab',
-        '-s', '1280x720',
-        '-i', displayPort,
-        '-r', '30',
-        RAW_VIDEO
-    ], { stdio: ['pipe', 'inherit', 'inherit'] });
+    console.log("Starting Puppeteer Screen Recorder...");
+    await recorder.start(RAW_VIDEO);
 
     console.log("Recording... Waiting for game completion.");
     
-    // Poll for the end of the game
     let gameWon = false;
     for (let i = 0; i < 120; i++) { // Max wait 60 seconds
         gameWon = await page.evaluate(() => window._GAME_WON === true);
@@ -79,36 +75,20 @@ async function main() {
     await sleep(3000);
 
     console.log("Gameplay finished. Saving video...");
-    // Attach listener BEFORE killing so we don't miss the event
-    const recorderClosePromise = new Promise((resolve) => recorder.on('close', resolve));
+    await recorder.stop();
     
-    // Send SIGINT to gracefully ask ffmpeg to build the mp4 header
-    recorder.kill('SIGINT');
-    
-    // Shutting down the browser forces X11 to redraw the screen black, unblocking ffmpeg's read loop!
     try { await browser.close(); } catch(e) {}
-    
-    // Wait for ffmpeg to securely finalize the video container headers
-    await recorderClosePromise;
-    
     server.kill();
 
     console.log("Compositing TikTok video using FFmpeg...");
     
     await new Promise((resolve, reject) => {
-        // Crop video to 9:16 aspect ratio (since source is 1280x720 (16:9), crop to roughly 405x720)
-        // Then add music
-        // Then overlay text
-        
         ffmpeg()
             .input(RAW_VIDEO)
             .input(BGM_PATH)
             .complexFilter([
-                // Crop to 9:16
                 '[0:v]crop=ih*(9/16):ih[cropped]',
-                // Draw title
                 `[cropped]drawtext=text='Go Rabbit Daily Puzzle':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=(h-text_h)/5:borderw=2:bordercolor=black[withtitle]`,
-                // Draw subtitle
                 `[withtitle]drawtext=text='Can you solve Medium & Hard?':fontcolor=#38bdf8:fontsize=24:x=(w-text_w)/2:y=h-(h/5):borderw=2:bordercolor=black[final_v]`
             ])
             .outputOptions([
@@ -120,7 +100,6 @@ async function main() {
                 '-crf 23',
                 '-c:a aac',
                 '-b:a 192k',
-                // Loop the BGM, or stop when the shortest stream ends
                 '-shortest'
             ])
             .save(FINAL_VIDEO)
@@ -135,7 +114,10 @@ async function main() {
     });
 }
 
-main().catch(err => {
+main().then(() => {
+    console.log("Process complete. Exiting natively.");
+    process.exit(0);
+}).catch(err => {
     console.error("Script failed:", err);
     process.exit(1);
 });
