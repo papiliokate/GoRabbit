@@ -1,5 +1,4 @@
 import puppeteer from 'puppeteer';
-import { PuppeteerScreenRecorder } from 'puppeteer-screen-recorder';
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
@@ -52,19 +51,19 @@ async function main() {
         console.warn("Navigation timeout reached, but we will wait for internal game completion flag.", e.message);
     }
 
-    const recorder = new PuppeteerScreenRecorder(page, {
-        fps: 30,
-        quality: 100,
-        format: 'webm',
-        videoFrame: { width: 1280, height: 720 },
-        videoCrf: 18,
-        videoCodec: 'libvpx',
-        videoBitrate: 1000,
-        autopad: { color: 'black' },
-        ffmpeg_Path: ffmpegInstaller.path
-    });
+    console.log("Starting X11 FFmpeg screen recorder...");
+    // Fallback to :99 which is xvfb-run's default if DISPLAY isn't set
+    const displayPort = process.env.DISPLAY || ':99';
+    let ffmpegRecordCmd = 'ffmpeg';
+    // Use the fluent-ffmpeg installer path if needed, but 'ffmpeg' should be natively available via apt
     
-    await recorder.start(RAW_VIDEO);
+    const recorder = spawn('ffmpeg', [
+        '-y', '-f', 'x11grab',
+        '-s', '1280x720',
+        '-i', displayPort,
+        '-r', '30',
+        RAW_VIDEO
+    ], { stdio: 'inherit' });
 
     console.log("Recording... Waiting for game completion.");
     
@@ -80,7 +79,10 @@ async function main() {
     await sleep(3000);
 
     console.log("Gameplay finished. Saving video...");
-    await recorder.stop();
+    recorder.kill('SIGINT');
+    
+    // Wait for the recording to safely compile and close
+    await sleep(2000);
     await browser.close();
     server.kill();
 
