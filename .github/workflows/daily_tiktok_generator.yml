@@ -43,6 +43,5 @@ jobs:
 
       - name: Ping Zapier Webhook
         run: |
-          # Make sure to replace this URL with your actual Zapier Webhook URL!
-          # curl -X POST -H "Content-Type: application/json" -d '{"video_url": "https://go-rabbit-4af82.web.app/daily_tiktok.mp4"}' https://hooks.zapier.com/hooks/catch/YOUR_WEBHOOK_ID/
-          echo "Deployed public video to https://go-rabbit-4af82.web.app/daily_tiktok.mp4"
+          curl -X POST -H "Content-Type: application/json" -d '{"video_url": "https://go-rabbit-4af82.web.app/daily_tiktok.mp4"}' https://hooks.zapier.com/hooks/catch/27231889/ujb002t/
+          echo "Deployed public video and pinged Zapier!"
