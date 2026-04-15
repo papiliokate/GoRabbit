@@ -1,3 +1,4 @@
+import puppeteer from 'puppeteer';
 import { launch, getStream } from 'puppeteer-stream';
 import fs from 'fs';
 import path from 'path';
@@ -31,6 +32,7 @@ async function main() {
 
     // Launch Puppeteer with extension for puppeteer-stream
     const browser = await launch({
+        executablePath: puppeteer.executablePath(),
         headless: false,
         args: [
             '--window-size=1280,720',
