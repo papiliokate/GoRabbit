@@ -27,13 +27,13 @@ jobs:
       - name: Install Puppeteer System Libraries
         run: |
           sudo apt-get update
-          sudo apt-get install -y libgbm-dev
+          sudo apt-get install -y libgbm-dev xvfb
           npx puppeteer browsers install chrome
 
       - name: Generate TikTok Video
-        run: node scripts/generate_tiktok.js
+        run: xvfb-run --auto-servernum node scripts/generate_tiktok.js
         env:
-          HEADLESS: "true"
+          HEADLESS: "false"
 
       - name: Build App (Syncs public/ folder to dist/)
         run: npm run build
