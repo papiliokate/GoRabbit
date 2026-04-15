@@ -45,7 +45,12 @@ async function main() {
     await page.setViewport({ width: 1280, height: 720 });
     
     console.log("Navigating to game and starting recording...");
-    await page.goto('http://127.0.0.1:5173/?autoplay=small', { waitUntil: 'load', timeout: 60000 });
+    try {
+        // Try to load, ignore timeout if it exceeds 30s, the page will just continue rendering in background
+        await page.goto('http://127.0.0.1:5173/?autoplay=small', { waitUntil: 'domcontentloaded', timeout: 30000 });
+    } catch (e) {
+        console.warn("Navigation timeout reached, but we will wait for internal game completion flag.", e.message);
+    }
 
     const stream = await getStream(page, { audio: true, video: true, mimeType: "video/webm;codecs=vp8,opus" });
     const fileStream = fs.createWriteStream(RAW_VIDEO);
