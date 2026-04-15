@@ -52,7 +52,7 @@ async function main() {
         console.warn("Navigation timeout reached, but we will wait for internal game completion flag.", e.message);
     }
 
-    const stream = await getStream(page, { audio: true, video: true, mimeType: "video/webm;codecs=vp8,opus" });
+    const stream = await getStream(page, { audio: false, video: true, mimeType: "video/webm;codecs=vp8" });
     const fileStream = fs.createWriteStream(RAW_VIDEO);
     stream.pipe(fileStream);
 
