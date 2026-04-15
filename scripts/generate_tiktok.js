@@ -97,15 +97,6 @@ async function main() {
         ffmpeg()
             .input(RAW_VIDEO)
             .input(BGM_PATH)
-            .outputOptions([
-                '-c:v libx264',
-                '-preset fast',
-                '-crf 23',
-                '-c:a aac',
-                '-b:a 192k',
-                // Loop the BGM, or stop when the shortest stream ends
-                '-shortest'
-            ])
             .complexFilter([
                 // Crop to 9:16
                 '[0:v]crop=ih*(9/16):ih[cropped]',
@@ -114,8 +105,17 @@ async function main() {
                 // Draw subtitle
                 `[withtitle]drawtext=text='Can you solve Medium & Hard?':fontcolor=#38bdf8:fontsize=24:x=(w-text_w)/2:y=h-(h/5):borderw=2:bordercolor=black[final_v]`
             ])
-            .map('[final_v]')
-            .map('1:a') // Audio from the second input (BGM)
+            .outputOptions([
+                '-map [final_v]',
+                '-map 1:a',
+                '-c:v libx264',
+                '-preset fast',
+                '-crf 23',
+                '-c:a aac',
+                '-b:a 192k',
+                // Loop the BGM, or stop when the shortest stream ends
+                '-shortest'
+            ])
             .save(FINAL_VIDEO)
             .on('end', () => {
                 console.log(`Successfully generated TikTok video at: ${FINAL_VIDEO}`);
