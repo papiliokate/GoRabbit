@@ -126,8 +126,25 @@ menuToggle.addEventListener('click', () => {
   setTimeout(() => game.adjustScale(), 10);
 });
 
+window.dailyMaps = null;
+
+async function fetchDailyMaps() {
+    try {
+        const res = await fetch('/daily_maps.json?v=' + Date.now());
+        if (res.ok) {
+            window.dailyMaps = await res.json();
+            console.log("Loaded daily maps from server.");
+        }
+    } catch (e) {
+        console.warn("Could not fetch daily maps, falling back to local generation.", e);
+    }
+}
+
 async function run() {
+    countdownEl.textContent = "Loading puzzles...";
     await TimeService.fetchTime();
+    await fetchDailyMaps();
+
     setInterval(() => {
         if (TimeService.checkNeedRefresh()) {
             countdownEl.textContent = "Loading new puzzles...";

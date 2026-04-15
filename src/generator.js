@@ -1,16 +1,9 @@
 import { Solver } from './solver.js';
-import { lockedMaps } from './locked_maps.js';
 import { Engine } from './engine.js';
 import { Random } from './random.js';
 
 export class Generator {
   static generate(difficulty, forceProcedural = false) {
-    if (!forceProcedural && lockedMaps[difficulty]) {
-       return { 
-           map: lockedMaps[difficulty].map.map(row => [...row]), 
-           solution: lockedMaps[difficulty].solution 
-       };
-    }
     
     let params = {
       small: { width: 9, height: 11, numSplits: 3, useCompound: false },

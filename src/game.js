@@ -133,9 +133,14 @@ export class GameMode {
       map = tutorialMap.map(row => [...row]);
       solution = [];
     } else {
-      const gen = Generator.generate(difficulty, true);
-      map = gen.map;
-      solution = gen.solution;
+      if (window.dailyMaps && window.dailyMaps[difficulty]) {
+        map = window.dailyMaps[difficulty].map.map(row => [...row]);
+        solution = window.dailyMaps[difficulty].solution;
+      } else {
+        const gen = Generator.generate(difficulty, true);
+        map = gen.map;
+        solution = gen.solution;
+      }
     }
     
     this.initialMap = map;

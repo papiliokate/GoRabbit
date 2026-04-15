@@ -32,9 +32,9 @@ async function run() {
     results[diff] = { map, solution };
   }
 
-  const fileContent = `export const lockedMaps = ${JSON.stringify(results, null, 2)};`;
-  fs.writeFileSync('./src/locked_maps.js', fileContent);
-  console.log('src/locked_maps.js has been updated with fresh procedural maps.');
+  if (!fs.existsSync('./public')) fs.mkdirSync('./public');
+  fs.writeFileSync('./public/daily_maps.json', JSON.stringify(results));
+  console.log('public/daily_maps.json has been updated with fresh procedural maps.');
 }
 
 run();
