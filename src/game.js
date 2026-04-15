@@ -477,7 +477,7 @@ export class GameMode {
      if (this.state.win) gridStr += "⛩️\n";
      
      const diffText = this.difficulty.charAt(0).toUpperCase() + this.difficulty.slice(1).replace('_', ' ');
-     const text = `Go Rabbit - Daily ${diffText}\n${this.state.moveCount} Moves\n\n${gridStr}\nPlay: https://go-rabbit-4af82.web.app`;
+     const text = `I just beat the Go Rabbit Daily ${diffText} puzzle!\n🐇 ${this.state.moveCount} Moves | ⏱️ ${this.totalTimeStr}\n\n${gridStr}\nCan you beat my time? Play: https://go-rabbit-4af82.web.app`;
      
      if (navigator.share) {
          navigator.share({
