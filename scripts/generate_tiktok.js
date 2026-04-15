@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer';
-import { launch, getStream } from 'puppeteer-stream';
+import { PuppeteerScreenRecorder } from 'puppeteer-screen-recorder';
 import fs from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
@@ -30,10 +30,9 @@ async function main() {
 
     console.log("Assuming Server is ready!");
 
-    // Launch Puppeteer with extension for puppeteer-stream
-    const browser = await launch({
-        executablePath: puppeteer.executablePath(),
-        headless: false,
+    // Launch Puppeteer natively
+    const browser = await puppeteer.launch({
+        headless: process.env.HEADLESS === 'true' ? 'new' : false,
         args: [
             '--window-size=1280,720',
             '--autoplay-policy=no-user-gesture-required',
@@ -53,9 +52,18 @@ async function main() {
         console.warn("Navigation timeout reached, but we will wait for internal game completion flag.", e.message);
     }
 
-    const stream = await getStream(page, { audio: false, video: true, mimeType: "video/webm;codecs=vp8" });
-    const fileStream = fs.createWriteStream(RAW_VIDEO);
-    stream.pipe(fileStream);
+    const recorder = new PuppeteerScreenRecorder(page, {
+        fps: 30,
+        quality: 100,
+        format: 'webm',
+        videoFrame: { width: 1280, height: 720 },
+        videoCrf: 18,
+        videoCodec: 'libvpx',
+        videoBitrate: 1000,
+        autopad: { color: 'black' }
+    });
+    
+    await recorder.start(RAW_VIDEO);
 
     console.log("Recording... Waiting for game completion.");
     
@@ -71,8 +79,7 @@ async function main() {
     await sleep(3000);
 
     console.log("Gameplay finished. Saving video...");
-    stream.destroy();
-    fileStream.close();
+    await recorder.stop();
     await browser.close();
     server.kill();
 
