@@ -22,26 +22,11 @@ async function main() {
         shell: process.platform === 'win32'
     });
 
-    let serverReady = false;
-    server.stdout.on('data', (data) => {
-        const str = data.toString();
-        if (str.includes('Local:')) {
-            serverReady = true;
-        }
-    });
+    // Wait 5 seconds unconditionally for Vite to start up
+    console.log("Waiting 5 seconds for Vite dev server to boot...");
+    await sleep(5000);
 
-    // Wait for server to start
-    for (let i = 0; i < 20; i++) {
-        if (serverReady) break;
-        await sleep(500);
-    }
-
-    if (!serverReady) {
-        console.error("Failed to start server.");
-        server.kill();
-        process.exit(1);
-    }
-    console.log("Server ready!");
+    console.log("Assuming Server is ready!");
 
     // Launch Puppeteer with extension for puppeteer-stream
     const browser = await puppeteer.launch({
