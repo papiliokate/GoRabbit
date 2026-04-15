@@ -79,10 +79,11 @@ async function main() {
     await sleep(3000);
 
     console.log("Gameplay finished. Saving video...");
-    recorder.kill('SIGINT');
+    await new Promise((resolve) => {
+        recorder.on('close', resolve);
+        recorder.kill('SIGINT');
+    });
     
-    // Wait for the recording to safely compile and close
-    await sleep(2000);
     await browser.close();
     server.kill();
 
