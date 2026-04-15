@@ -2,6 +2,7 @@ import './style.css';
 import { GameMode } from './game.js';
 import { TimeService } from './time_service.js';
 import { Random } from './random.js';
+import { Solver } from './solver.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-analytics.js";
 
@@ -158,11 +159,45 @@ async function run() {
     }
 
     // Start with small by default
-    document.querySelector('.diff-btn[data-diff="small"]').classList.add('active');
-    if (TimeService.currentUtcDateStr) {
-        Random.setSeed(TimeService.currentUtcDateStr + "-v3-small");
+    const urlParams = new URLSearchParams(window.location.search);
+    const startDifficulty = urlParams.get('autoplay') || urlParams.get('diff') || 'small';
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    
+    const activeBtn = document.querySelector(`.diff-btn[data-diff="${startDifficulty}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+    
+    if (startDifficulty !== 'tutorial' && TimeService.currentUtcDateStr) {
+        Random.setSeed(TimeService.currentUtcDateStr + "-v3-" + startDifficulty);
+    } else {
+        Random.setSeed(null);
     }
-    game.init('small');
+    game.init(startDifficulty);
+
+    if (urlParams.get('autoplay') === startDifficulty) {
+        // Wait for visual initialization and then start solving
+        setTimeout(() => {
+            const solution = Solver.solve(game.state, 20000);
+            if (solution) {
+                // Add a delay between moves for better visual capture
+                game.processNextAction = function() {
+                  if (this.actionQueue && this.actionQueue.length > 0 && !this.state.gameOver && !this.state.win) {
+                      const nextAction = this.actionQueue.shift();
+                      setTimeout(() => {
+                         this.applyAction(nextAction);
+                      }, 200); // Wait 200ms between actions so it doesn't solve instantly and overlap logic
+                  } else if (this.state.win) {
+                      // Trigger recording stop by setting a flag the puppeteer script can see
+                      window._GAME_WON = true;
+                  }
+                };
+                
+                game.actionQueue = solution;
+                game.processNextAction();
+            } else {
+                console.error("Autoplay failed to solve the map.");
+            }
+        }, 1500);
+    }
 }
 
 run();
