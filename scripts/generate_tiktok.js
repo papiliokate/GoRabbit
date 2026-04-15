@@ -79,14 +79,17 @@ async function main() {
     await sleep(3000);
 
     console.log("Gameplay finished. Saving video...");
+    // Attach listener BEFORE killing so we don't miss the event
+    const recorderClosePromise = new Promise((resolve) => recorder.on('close', resolve));
+    
     // Send SIGINT to ffmpeg
     recorder.kill('SIGINT');
     
     // Force a screen update by closing the browser so x11grab unblocks
     await browser.close();
     
-    // Now ffmpeg will cleanly process the signal and exit
-    await new Promise((resolve) => recorder.on('close', resolve));
+    // Now await ffmpeg successfully exiting
+    await recorderClosePromise;
     
     server.kill();
 
