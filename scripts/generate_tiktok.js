@@ -82,14 +82,13 @@ async function main() {
     // Attach listener BEFORE killing so we don't miss the event
     const recorderClosePromise = new Promise((resolve) => recorder.on('close', resolve));
     
-    // Send SIGINT to ffmpeg
-    recorder.kill('SIGINT');
+    // Send native Q command to shut down ffmpeg properly
+    recorder.stdin.write('q\n');
     
-    // Force a screen update by closing the browser so x11grab unblocks
-    await browser.close();
-    
-    // Now await ffmpeg successfully exiting
+    // Wait for ffmpeg to securely finalize the video container headers
     await recorderClosePromise;
+    
+    await browser.close();
     
     server.kill();
 
