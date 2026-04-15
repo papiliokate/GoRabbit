@@ -16,11 +16,13 @@ const FINAL_VIDEO = path.resolve('public/daily_tiktok.mp4');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-    console.log("Starting local vite server...");
     const server = spawn('npx', ['vite', '--port', '5173', '--host', '127.0.0.1', '--clearScreen', 'false'], {
         cwd: process.cwd(),
-        shell: process.platform === 'win32'
+        shell: true
     });
+    
+    server.stderr.on('data', (data) => console.error("VITE ERROR:", data.toString()));
+    server.stdout.on('data', (data) => console.log("VITE:", data.toString()));
 
     // Wait 5 seconds unconditionally for Vite to start up
     console.log("Waiting 5 seconds for Vite dev server to boot...");
