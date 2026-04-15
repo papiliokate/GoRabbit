@@ -17,7 +17,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
     console.log("Starting local vite server...");
-    const server = spawn('npx', ['vite', '--port', '5173', '--clearScreen', 'false'], {
+    const server = spawn('npx', ['vite', '--port', '5173', '--host', '127.0.0.1', '--clearScreen', 'false'], {
         cwd: process.cwd(),
         shell: process.platform === 'win32'
     });
@@ -43,7 +43,7 @@ async function main() {
     await page.setViewport({ width: 1280, height: 720 });
     
     console.log("Navigating to game and starting recording...");
-    await page.goto('http://localhost:5173/?autoplay=small', { waitUntil: 'networkidle2' });
+    await page.goto('http://127.0.0.1:5173/?autoplay=small', { waitUntil: 'networkidle2' });
 
     const stream = await getStream(page, { audio: true, video: true, mimeType: "video/webm;codecs=vp8,opus" });
     const fileStream = fs.createWriteStream(RAW_VIDEO);
