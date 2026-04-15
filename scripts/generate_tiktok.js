@@ -63,7 +63,7 @@ async function main() {
         '-i', displayPort,
         '-r', '30',
         RAW_VIDEO
-    ], { stdio: 'inherit' });
+    ], { stdio: ['pipe', 'inherit', 'inherit'] });
 
     console.log("Recording... Waiting for game completion.");
     
@@ -81,7 +81,7 @@ async function main() {
     console.log("Gameplay finished. Saving video...");
     await new Promise((resolve) => {
         recorder.on('close', resolve);
-        recorder.kill('SIGINT');
+        recorder.stdin.write('q\n');
     });
     
     await browser.close();
