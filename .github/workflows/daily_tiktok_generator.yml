@@ -43,5 +43,6 @@ jobs:
 
       - name: Ping Zapier Webhook
         run: |
-          curl -X POST -H "Content-Type: application/json" -d '{"video_url": "https://go-rabbit-4af82.web.app/daily_tiktok.mp4"}' https://hooks.zapier.com/hooks/catch/27231889/ujm5mjh/
-          echo "Deployed public video and pinged Zapier!"
+          CAPTION="Can you solve today's Go Rabbit Daily Puzzle? 🐰 Drop your move count below! Play free at go-rabbit-4af82.web.app 🥕 #GoRabbit #DailyPuzzle #PuzzleGame #BrainTeaser #Gaming #"$(date +'%Y%m%d')
+          curl -X POST -H "Content-Type: application/json" -d "{\"video_url\": \"https://go-rabbit-4af82.web.app/daily_tiktok.mp4\", \"text\": \"$CAPTION\"}" https://hooks.zapier.com/hooks/catch/27231889/ujm5mjh/
+          echo "Deployed public video and pinged Zapier with caption!"
