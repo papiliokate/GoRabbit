@@ -5,8 +5,11 @@ import path from 'path';
 import { spawn } from 'child_process';
 import ffmpeg from 'fluent-ffmpeg';
 import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+import * as googleTTS from 'google-tts-api';
 
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+
+const TTS_PATH = path.resolve('public/tts.mp3');
 
 const BGM_PATH = path.resolve('public/tiktok_bgm.mp3');
 const RAW_VIDEO = path.resolve('raw.mp4');
@@ -27,6 +30,23 @@ async function main() {
     await sleep(5000);
 
     console.log("Assuming Server is ready!");
+
+    console.log("Generating TTS audio...");
+    try {
+        const ttsUrl = googleTTS.getAudioUrl("Welcome to today's Go Rabbit challenge. Can you find the winning moves?", {
+            lang: 'en',
+            slow: false,
+            host: 'https://translate.google.com',
+        });
+        const ttsResponse = await fetch(ttsUrl);
+        const ttsBuffer = await ttsResponse.arrayBuffer();
+        fs.writeFileSync(TTS_PATH, Buffer.from(ttsBuffer));
+        console.log("TTS audio successfully generated.");
+    } catch (err) {
+        console.warn("Failed to generate TTS audio, continuing without it.", err);
+        // Create an empty dummy file so ffmpeg doesn't fail if TTS fails
+        fs.writeFileSync(TTS_PATH, Buffer.from([]));
+    }
 
     const browser = await puppeteer.launch({
         headless: 'new', // new headless mode is better for plugins/recorders
@@ -86,10 +106,16 @@ async function main() {
         ffmpeg()
             .input(RAW_VIDEO)
             .input(BGM_PATH).inputOptions(['-stream_loop', '-1'])
+            .input(TTS_PATH)
+            .complexFilter([
+                '[1:a]volume=0.3[bgm_quiet]',
+                '[2:a]volume=1.5[tts_loud]',
+                '[bgm_quiet][tts_loud]amix=inputs=2:duration=first:dropout_transition=3[audio_out]'
+            ])
             .outputOptions([
                 '-y',
                 '-map 0:v',
-                '-map 1:a',
+                '-map [audio_out]',
                 '-c:v libx264',
                 '-pix_fmt yuv420p',
                 '-preset slow',

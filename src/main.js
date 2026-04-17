@@ -210,7 +210,7 @@ async function run() {
                       const nextAction = this.actionQueue.shift();
                       setTimeout(() => {
                          this.applyAction(nextAction);
-                      }, 200); // Wait 200ms between actions so it doesn't solve instantly and overlap logic
+                      }, 130); // Wait 130ms between actions so it doesn't solve instantly and overlap logic
                   } else if (this.state.win) {
                       // Trigger recording stop by setting a flag the puppeteer script can see
                       window._GAME_WON = true;

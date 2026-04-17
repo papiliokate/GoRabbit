@@ -43,6 +43,15 @@ jobs:
 
       - name: Ping Zapier Webhook
         run: |
-          CAPTION="Can you solve today's Go Rabbit Daily Puzzle? 🐰 Drop your move count below! Play free at go-rabbit-4af82.web.app 🥕 #GoRabbit #DailyPuzzle #PuzzleGame #BrainTeaser #Gaming #"$(date +'%Y%m%d')
+          CAPTIONS=(
+            "My brain hurts from this one 🤯 Drop your move count below! Play free at go-rabbit-4af82.web.app 🥕"
+            "Can you spot the winning move before the bot does? 🐰 Play free at go-rabbit-4af82.web.app"
+            "Only 10% of players can beat this under 12 moves! Test your brain at go-rabbit-4af82.web.app 🥕"
+            "Today's Go Rabbit Daily Puzzle! 🐰 Can you beat it? Play free at go-rabbit-4af82.web.app"
+            "This layout is brutal! Can you do it in less moves than the bot? 🚀 play at go-rabbit-4af82.web.app"
+          )
+          RANDOM_INDEX=$(( $RANDOM % 5 ))
+          SELECTED_CAPTION="${CAPTIONS[$RANDOM_INDEX]}"
+          CAPTION="$SELECTED_CAPTION #GoRabbit #DailyPuzzle #PuzzleGame #BrainTeaser #Gaming #"$(date +'%Y%m%d')
           curl -X POST -H "Content-Type: application/json" -d "{\"video_url\": \"https://go-rabbit-4af82.web.app/daily_tiktok.mp4\", \"text\": \"$CAPTION\"}" https://hooks.zapier.com/hooks/catch/27231889/ujm5mjh/
-          echo "Deployed public video and pinged Zapier with caption!"
+          echo "Deployed public video and pinged Zapier with dynamic rotating caption!"
