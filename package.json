@@ -17,5 +17,10 @@
     "puppeteer": "^24.40.0",
     "puppeteer-screen-recorder": "^3.0.3",
     "vite": "^8.0.4"
+  },
+  "overrides": {
+    "puppeteer-screen-recorder": {
+      "puppeteer": "$puppeteer"
+    }
   }
 }

@@ -15,9 +15,9 @@ const FINAL_VIDEO = path.resolve('public/daily_tiktok.mp4');
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function main() {
-    const server = spawn('npx', ['vite', '--port', '5173', '--host', '127.0.0.1', '--clearScreen', 'false'], {
+    const server = spawn('node', ['node_modules/vite/bin/vite.js', '--port', '5173', '--strictPort', '--host', '127.0.0.1', '--clearScreen', 'false'], {
         cwd: process.cwd(),
-        shell: true
+        shell: false
     });
     
     server.stderr.on('data', (data) => console.error("VITE ERROR:", data.toString()));
@@ -31,7 +31,7 @@ async function main() {
     const browser = await puppeteer.launch({
         headless: 'new', // new headless mode is better for plugins/recorders
         args: [
-            '--window-size=1280,720',
+            '--window-size=720,1280',
             '--autoplay-policy=no-user-gesture-required',
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -40,21 +40,21 @@ async function main() {
     });
 
     const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 720 });
+    await page.setViewport({ width: 720, height: 1280 });
     
     const recorder = new PuppeteerScreenRecorder(page, {
         fps: 30,
         ffmpeg_Path: ffmpegInstaller.path,
         videoFrame: {
-            width: 1280,
-            height: 720,
+            width: 720,
+            height: 1280,
         },
-        aspectRatio: '16:9',
+        aspectRatio: '9:16',
     });
 
     console.log("Navigating to game and starting recording...");
     try {
-        await page.goto('http://127.0.0.1:5173/?autoplay=small', { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.goto('http://127.0.0.1:5173/?autoplay=small&tiktok=true', { waitUntil: 'domcontentloaded', timeout: 30000 });
     } catch (e) {
         console.warn("Navigation timeout reached, but we will wait for internal game completion flag.", e.message);
     }
@@ -72,7 +72,7 @@ async function main() {
     }
     
     // Wait a couple of seconds after win to capture the victory state
-    await sleep(3000);
+    await sleep(5000);
 
     console.log("Gameplay finished. Saving video...");
     await recorder.stop();
@@ -85,19 +85,15 @@ async function main() {
     await new Promise((resolve, reject) => {
         ffmpeg()
             .input(RAW_VIDEO)
-            .input(BGM_PATH)
-            .complexFilter([
-                '[0:v]crop=ih*(9/16):ih[cropped]',
-                `[cropped]drawtext=text='Go Rabbit Daily Puzzle':fontcolor=white:fontsize=36:x=(w-text_w)/2:y=(h-text_h)/5:borderw=2:bordercolor=black[withtitle]`,
-                `[withtitle]drawtext=text='Can you solve Medium & Hard?':fontcolor=#38bdf8:fontsize=24:x=(w-text_w)/2:y=h-(h/5):borderw=2:bordercolor=black[final_v]`
-            ])
+            .input(BGM_PATH).inputOptions(['-stream_loop', '-1'])
             .outputOptions([
                 '-y',
-                '-map [final_v]',
+                '-map 0:v',
                 '-map 1:a',
                 '-c:v libx264',
-                '-preset fast',
-                '-crf 23',
+                '-pix_fmt yuv420p',
+                '-preset slow',
+                '-crf 18',
                 '-c:a aac',
                 '-b:a 192k',
                 '-shortest'

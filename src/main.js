@@ -92,6 +92,33 @@ document.querySelector('#app').innerHTML = `
   </div>
 `;
 
+const urlParams = new URLSearchParams(window.location.search);
+const isTikTok = urlParams.get('tiktok') === 'true';
+
+if (isTikTok) {
+    document.body.classList.add('tiktok-mode');
+    
+    const bg = document.createElement('div');
+    bg.className = 'tiktok-bg';
+    document.body.appendChild(bg);
+    
+    const header = document.createElement('div');
+    header.className = 'tiktok-header';
+    header.innerHTML = '<h1 class="tiktok-title">Go Rabbit</h1><div class="tiktok-subtitle">Daily Puzzle</div>';
+    document.body.appendChild(header);
+    
+    const footer = document.createElement('div');
+    footer.className = 'tiktok-footer';
+    footer.innerHTML = '<div class="tiktok-link">go-rabbit-4af82.web.app</div><div class="tiktok-bio">Play Free Now!</div>';
+    document.body.appendChild(footer);
+    
+    const victory = document.createElement('div');
+    victory.id = 'tiktok-victory-display';
+    victory.className = 'tiktok-victory';
+    victory.innerHTML = '<h2>Victory!</h2><div class="stats" id="tiktok-stats"></div><div class="challenge">Can you beat this?</div>';
+    document.body.appendChild(victory);
+}
+
 const boardEl = document.getElementById('board');
 const statusEl = document.getElementById('status');
 const inventoryEl = document.getElementById('inventory');
@@ -159,7 +186,6 @@ async function run() {
     }
 
     // Start with small by default
-    const urlParams = new URLSearchParams(window.location.search);
     const startDifficulty = urlParams.get('autoplay') || urlParams.get('diff') || 'small';
     document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
     

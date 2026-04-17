@@ -9,16 +9,16 @@ jobs:
   generate-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps || npm install --legacy-peer-deps
 
       - name: Generate Maps
         run: npm run generate-maps
@@ -30,10 +30,10 @@ jobs:
         run: npm run build
 
       - name: Deploy to Firebase Hosting
-        run: npx firebase-tools deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}"
+        run: npx firebase-tools deploy --only hosting --project go-rabbit-4af82 --token "${{ secrets.FIREBASE_TOKEN }}"
 
       - name: Cleanup old releases
         run: |
           # The SITE_ID is usually your project ID or the specific site defined in your Firebase console.
           # Replace 'gorabbit' with your actual Firebase Site ID if it fails to cleanup.
-          npx firebase-tools hosting:releases:delete gorabbit --keep 5 --force --token "${{ secrets.FIREBASE_TOKEN }}" || echo "Cleanup failed. Check if SITE_ID is correct."
+          npx firebase-tools hosting:releases:delete go-rabbit-4af82 --project go-rabbit-4af82 --keep 5 --force --token "${{ secrets.FIREBASE_TOKEN }}" || echo "Cleanup failed. Check if SITE_ID is correct."

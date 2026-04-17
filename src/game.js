@@ -190,7 +190,13 @@ export class GameMode {
      
      const headerHeight = header && isMobile ? header.offsetHeight : 0;
      const paddingHeight = isMobile ? 60 : 80;
-     const availableHeight = Math.max(100, window.innerHeight - headerHeight - paddingHeight - gapHeight);
+     let availableHeight = Math.max(100, window.innerHeight - headerHeight - paddingHeight - gapHeight);
+     
+     const urlParams = new URLSearchParams(window.location.search);
+     if (urlParams.get('tiktok') === 'true') {
+         // Force restrict available height and width bounds tightly so it fits in a 16:9 vertical safe zone.
+         availableHeight = 1280 * 0.5; // Only 50% of screen height given to board
+     }
      
      const maxCellWidth = availableWidth / this.state.width;
      const maxCellHeight = availableHeight / this.state.height;
@@ -440,6 +446,17 @@ export class GameMode {
   }
 
   showVictoryBanner() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('tiktok') === 'true') {
+        const victoryEl = document.getElementById('tiktok-victory-display');
+        const statsEl = document.getElementById('tiktok-stats');
+        if (victoryEl && statsEl) {
+            statsEl.innerHTML = `<strong>${this.state.moveCount} Moves</strong><br/>Time: <strong>${this.totalTimeStr}</strong>`;
+            victoryEl.classList.add('show');
+        }
+        return;
+    }
+
     const modal = document.getElementById('victory-modal');
     const textEl = document.getElementById('victory-text');
     const nextBtn = document.getElementById('victory-next');
