@@ -1,4 +1,4 @@
-name: Daily Video - Standard
+name: Daily Video - Randomized
 
 on:
   schedule:
@@ -29,11 +29,15 @@ jobs:
           sudo apt-get install -y libgbm-dev xvfb ffmpeg
           npx puppeteer browsers install chrome
 
-      - name: Generate Standard Video
-        run: xvfb-run --auto-servernum node scripts/generate_video.js
+      - name: Generate Randomized Video
+        run: |
+          FORMATS=("standard" "fail" "interactive")
+          FORMAT_CHOICE=${FORMATS[$(( $RANDOM % 3 ))]}
+          echo "FORMAT=${FORMAT_CHOICE}" >> $GITHUB_ENV
+          export FORMAT=${FORMAT_CHOICE}
+          xvfb-run --auto-servernum node scripts/generate_video.js
         env:
           HEADLESS: "false"
-          FORMAT: "standard"
 
       - name: Build App (Syncs public/ folder to dist/)
         run: npm run build
@@ -43,22 +47,50 @@ jobs:
 
       - name: Ping Zapier Webhook
         run: |
-          CAPTIONS=(
-            "Can you spot the winning move before the bot does? 🐰 Play free at go-rabbit-4af82.web.app"
-            "Only 10% of players can beat this under 12 moves! Test your brain at go-rabbit-4af82.web.app 🥕"
-            "Today's Go Rabbit Daily Puzzle! 🐰 Can you beat it? Play free at go-rabbit-4af82.web.app"
-          )
-          YOUTUBE_TITLES=(
-            "Can You Solve Today's Level? (#Shorts)"
-            "Fastest Way To Win (#Puzzle)"
-            "Daily Go Rabbit Challenge (#Gaming)"
-          )
+          if [ "$FORMAT" == "fail" ]; then
+            CAPTIONS=(
+              "I literally cannot believe I missed this obvious path 😭 play free at go-rabbit-4af82.web.app"
+              "This level broke my brain before I saw the solution 🤯 go-rabbit-4af82.web.app"
+              "Why is today's map literally impossible? Oh wait... 🐰 go-rabbit-4af82.web.app"
+            )
+            YOUTUBE_TITLES=(
+              "I Can't Believe I Missed This! (#Fail)"
+              "Hardest Puzzle Ever? (#Shorts)"
+              "This Level Broke My Brain (#Gaming)"
+            )
+            HASHTAG="#Fail #GoRabbit #DailyPuzzle #"$(date +'%Y%m%d')
+          elif [ "$FORMAT" == "interactive" ]; then
+            CAPTIONS=(
+              "Only 1% of players get this final move right. A or B? Drop your answer below 👇 #GoRabbit"
+              "Which path wins the game? Are you smart enough? 🐰 #Gaming #Puzzle"
+              "The final move is always the hardest. Did you guess right? 🥕 #BrainTeaser"
+            )
+            YOUTUBE_TITLES=(
+              "Which Move Wins? A or B? (#Shorts)"
+              "99% of People Fail This (#Puzzle)"
+              "Can You Guess The Final Move? (#Gaming)"
+            )
+            HASHTAG="#"$(date +'%Y%m%d')
+          else
+            CAPTIONS=(
+              "Can you spot the winning move before the bot does? 🐰 Play free at go-rabbit-4af82.web.app"
+              "Only 10% of players can beat this under 12 moves! Test your brain at go-rabbit-4af82.web.app 🥕"
+              "Today's Go Rabbit Daily Puzzle! 🐰 Can you beat it? Play free at go-rabbit-4af82.web.app"
+            )
+            YOUTUBE_TITLES=(
+              "Can You Solve Today's Level? (#Shorts)"
+              "Fastest Way To Win (#Puzzle)"
+              "Daily Go Rabbit Challenge (#Gaming)"
+            )
+            HASHTAG="#GoRabbit #DailyPuzzle #Gaming #"$(date +'%Y%m%d')
+          fi
+          
           R_INDEX=$(( $RANDOM % 3 ))
-          CAPTION="${CAPTIONS[$R_INDEX]} #GoRabbit #DailyPuzzle #Gaming #"$(date +'%Y%m%d')
+          CAPTION="${CAPTIONS[$R_INDEX]} $HASHTAG"
           YT_TITLE="${YOUTUBE_TITLES[$R_INDEX]}"
           
           curl -X POST -H "Content-Type: application/json" \
           -d "{\"video_url\": \"https://go-rabbit-4af82.web.app/daily_video.mp4\", \"text\": \"$CAPTION\", \"youtube_title\": \"$YT_TITLE\", \"target_channel\": \"all\"}" \
           https://hooks.zapier.com/hooks/catch/27231889/ujm5mjh/
           
-          echo "Deployed public video and pinged Zapier!"
+          echo "Deployed $FORMAT public video and pinged Zapier!"
