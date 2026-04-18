@@ -31,16 +31,15 @@ document.querySelector('#app').innerHTML = `
         <h1>Go Rabbit - Daily Puzzles</h1>
         <div class="controls">
           <button class="diff-btn" data-diff="tutorial">Tutorial</button>
-          <button class="diff-btn" data-diff="small">Small</button>
-          <button class="diff-btn" data-diff="medium">Medium</button>
-          <button class="diff-btn" data-diff="large">Large</button>
-          <button class="diff-btn" data-diff="extra_large">Extra Large</button>
-          <button id="reset-btn">Reset</button>
+          <button class="diff-btn" data-diff="small">S</button>
+          <button class="diff-btn" data-diff="medium">M</button>
+          <button class="diff-btn" data-diff="large">L</button>
+          <button class="diff-btn" data-diff="extra_large">XL</button>
+          <button id="reset-btn">↻</button>
         </div>
         <div id="daily-countdown">Connecting to Time Service...</div>
       </div>
       <div id="hud-panel">
-        <button id="menu-toggle">▼ Menu</button>
         <div id="status">Select a difficulty to start!</div>
         <div id="inventory">Eggs: 0 | Lettuce: 0 | Moves: 0</div>
         <div class="timer-wrapper">
@@ -147,12 +146,7 @@ resetBtn.addEventListener('click', () => {
   game.reset();
 });
 
-const menuToggle = document.getElementById('menu-toggle');
 const headerEl = document.getElementById('game-header');
-menuToggle.addEventListener('click', () => {
-  headerEl.classList.remove('collapsed');
-  setTimeout(() => game.adjustScale(), 10);
-});
 
 window.dailyMaps = null;
 

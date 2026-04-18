@@ -102,32 +102,7 @@ button:hover, button.active {
   color: #3c2a21;
 }
 
-#menu-toggle {
-  display: none;
-  background: var(--easy);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 16px;
-  font-size: 0.9rem;
-  font-weight: bold;
-  margin: 0 auto 10px auto;
-  cursor: pointer;
-  box-shadow: 0px 4px 0px #456b2c;
-}
 
-#menu-toggle:active {
-  transform: translateY(4px);
-  box-shadow: 0px 0px 0px #456b2c;
-}
-
-#game-header.collapsed #collapsible-menu {
-  display: none;
-}
-
-#game-header.collapsed #menu-toggle {
-  display: block;
-}
 
 #hud-panel {
   display: flex;
@@ -442,6 +417,9 @@ button:hover, button.active {
   #game-container { padding: 8px; gap: 8px; border-width: 4px; }
   h1 { font-size: 1.4rem; }
   button { padding: 6px 10px; font-size: 0.8rem; }
+  .controls { flex-wrap: nowrap; gap: 6px; width: 100%; justify-content: center; overflow-x: auto; padding-bottom: 4px; }
+  .diff-btn, #reset-btn { min-width: 40px; height: 40px; padding: 0; display: flex; justify-content: center; align-items: center; flex-shrink: 0; }
+  button[data-diff="tutorial"] { min-width: 60px; padding: 0 10px; width: auto; }
   .entity-sprite {
     transform: scale(1) var(--facing, scaleX(1));
   }

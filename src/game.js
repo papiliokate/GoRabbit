@@ -168,14 +168,6 @@ export class GameMode {
     this.adjustScale();
   }
 
-  collapseHeader() {
-    const header = document.getElementById('game-header');
-    if (header && !header.classList.contains('collapsed')) {
-      header.classList.add('collapsed');
-      setTimeout(() => this.adjustScale(), 10);
-    }
-  }
-
   adjustScale() {
      if (!this.state || !this.state.width) return;
      
@@ -210,8 +202,6 @@ export class GameMode {
 
   handleKeyDown(event) {
     if (this.state.gameOver || this.isAnimating) return;
-
-    this.collapseHeader();
 
     // initialize audio on first key
     if (this.audioContext && this.audioContext.state === 'suspended') {
@@ -283,7 +273,6 @@ export class GameMode {
   }
 
   handleBoardClick(e) {
-    this.collapseHeader();
     if (this.audioContext && this.audioContext.state === 'suspended') { this.audioContext.resume(); this.audioInitialized = true; } else { this.audioInitialized = true; }
     if (e.target.closest('.cell') || e.target.closest('.dynamic-entity')) this.startTimerIfFirstMove();
 
