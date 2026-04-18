@@ -11,7 +11,11 @@ ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
 const TTS_PATH = path.resolve('public/tts.mp3');
 
-const BGM_PATH = path.resolve('public/tiktok_bgm.mp3');
+const bgmDir = path.resolve('public/bgm');
+const bgmFiles = fs.readdirSync(bgmDir).filter(f => f.endsWith('.mp3'));
+const randomBgm = bgmFiles[Math.floor(Math.random() * bgmFiles.length)];
+const BGM_PATH = path.resolve(bgmDir, randomBgm);
+console.log(`Selected BGM: ${randomBgm}`);
 const RAW_VIDEO = path.resolve('raw.mp4');
 const FINAL_VIDEO = path.resolve('public/daily_video.mp4');
 
