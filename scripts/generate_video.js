@@ -13,7 +13,7 @@ const TTS_PATH = path.resolve('public/tts.mp3');
 
 const BGM_PATH = path.resolve('public/tiktok_bgm.mp3');
 const RAW_VIDEO = path.resolve('raw.mp4');
-const FINAL_VIDEO = path.resolve('public/daily_tiktok.mp4');
+const FINAL_VIDEO = path.resolve('public/daily_video.mp4');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -31,9 +31,23 @@ async function main() {
 
     console.log("Assuming Server is ready!");
 
+    const FORMAT = process.env.FORMAT || 'standard';
+    console.log(`Generating video for format: ${FORMAT}`);
+    
+    let urlParam = 'small';
+    let ttsText = "Welcome to today's Go Rabbit challenge. Can you find the winning moves?";
+    
+    if (FORMAT === 'fail') {
+        urlParam = 'fail';
+        ttsText = "I literally cannot believe the bot missed this move. Try to beat today's map!";
+    } else if (FORMAT === 'interactive') {
+        urlParam = 'interactive';
+        ttsText = "Only 1% of players get this final move right. Which path wins the game?";
+    }
+
     console.log("Generating TTS audio...");
     try {
-        const ttsUrl = googleTTS.getAudioUrl("Welcome to today's Go Rabbit challenge. Can you find the winning moves?", {
+        const ttsUrl = googleTTS.getAudioUrl(ttsText, {
             lang: 'en',
             slow: false,
             host: 'https://translate.google.com',
@@ -74,7 +88,7 @@ async function main() {
 
     console.log("Navigating to game and starting recording...");
     try {
-        await page.goto('http://127.0.0.1:5173/?autoplay=small&tiktok=true', { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.goto(`http://127.0.0.1:5173/?autoplay=${urlParam}&tiktok=true`, { waitUntil: 'domcontentloaded', timeout: 30000 });
     } catch (e) {
         console.warn("Navigation timeout reached, but we will wait for internal game completion flag.", e.message);
     }
@@ -85,7 +99,7 @@ async function main() {
     console.log("Recording... Waiting for game completion.");
     
     let gameWon = false;
-    for (let i = 0; i < 120; i++) { // Max wait 60 seconds
+    for (let i = 0; i < 240; i++) { // Max wait 120 seconds to accommodate interactive pause
         gameWon = await page.evaluate(() => window._GAME_WON === true);
         if (gameWon) break;
         await sleep(500);

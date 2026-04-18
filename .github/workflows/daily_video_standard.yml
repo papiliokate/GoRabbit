@@ -1,13 +1,12 @@
-name: Daily TikTok Generator
+name: Daily Video - Standard
 
 on:
   schedule:
-    # Run at 00:30 UTC every day, ensuring it always runs AFTER the map generator
     - cron: '30 0 * * *'
-  workflow_dispatch: # Allow manual triggering for testing
+  workflow_dispatch:
 
 jobs:
-  generate-tiktok:
+  generate-video:
     runs-on: ubuntu-latest
     
     steps:
@@ -30,10 +29,11 @@ jobs:
           sudo apt-get install -y libgbm-dev xvfb ffmpeg
           npx puppeteer browsers install chrome
 
-      - name: Generate TikTok Video
-        run: xvfb-run --auto-servernum node scripts/generate_tiktok.js
+      - name: Generate Standard Video
+        run: xvfb-run --auto-servernum node scripts/generate_video.js
         env:
           HEADLESS: "false"
+          FORMAT: "standard"
 
       - name: Build App (Syncs public/ folder to dist/)
         run: npm run build
@@ -44,14 +44,21 @@ jobs:
       - name: Ping Zapier Webhook
         run: |
           CAPTIONS=(
-            "My brain hurts from this one 🤯 Drop your move count below! Play free at go-rabbit-4af82.web.app 🥕"
             "Can you spot the winning move before the bot does? 🐰 Play free at go-rabbit-4af82.web.app"
             "Only 10% of players can beat this under 12 moves! Test your brain at go-rabbit-4af82.web.app 🥕"
             "Today's Go Rabbit Daily Puzzle! 🐰 Can you beat it? Play free at go-rabbit-4af82.web.app"
-            "This layout is brutal! Can you do it in less moves than the bot? 🚀 play at go-rabbit-4af82.web.app"
           )
-          RANDOM_INDEX=$(( $RANDOM % 5 ))
-          SELECTED_CAPTION="${CAPTIONS[$RANDOM_INDEX]}"
-          CAPTION="$SELECTED_CAPTION #GoRabbit #DailyPuzzle #PuzzleGame #BrainTeaser #Gaming #"$(date +'%Y%m%d')
-          curl -X POST -H "Content-Type: application/json" -d "{\"video_url\": \"https://go-rabbit-4af82.web.app/daily_tiktok.mp4\", \"text\": \"$CAPTION\"}" https://hooks.zapier.com/hooks/catch/27231889/ujm5mjh/
-          echo "Deployed public video and pinged Zapier with dynamic rotating caption!"
+          YOUTUBE_TITLES=(
+            "Can You Solve Today's Level? (#Shorts)"
+            "Fastest Way To Win (#Puzzle)"
+            "Daily Go Rabbit Challenge (#Gaming)"
+          )
+          R_INDEX=$(( $RANDOM % 3 ))
+          CAPTION="${CAPTIONS[$R_INDEX]} #GoRabbit #DailyPuzzle #Gaming #"$(date +'%Y%m%d')
+          YT_TITLE="${YOUTUBE_TITLES[$R_INDEX]}"
+          
+          curl -X POST -H "Content-Type: application/json" \
+          -d "{\"video_url\": \"https://go-rabbit-4af82.web.app/daily_video.mp4\", \"text\": \"$CAPTION\", \"youtube_title\": \"$YT_TITLE\", \"target_channel\": \"both\"}" \
+          https://hooks.zapier.com/hooks/catch/27231889/ujm5mjh/
+          
+          echo "Deployed public video and pinged Zapier!"

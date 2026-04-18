@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "deploy": "vite build && firebase deploy",
     "generate-maps": "node apply_daily_maps.js",
-    "generate-tiktok": "node scripts/generate_tiktok.js"
+    "generate-video": "node scripts/generate_video.js"
   },
   "devDependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",

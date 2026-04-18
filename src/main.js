@@ -186,7 +186,14 @@ async function run() {
     }
 
     // Start with small by default
-    const startDifficulty = urlParams.get('autoplay') || urlParams.get('diff') || 'small';
+    const autoplayMode = urlParams.get('autoplay');
+    let startDifficulty = urlParams.get('diff') || 'small';
+    if (['tutorial', 'small', 'medium', 'large', 'extra_large'].includes(autoplayMode)) {
+        startDifficulty = autoplayMode;
+    } else if (autoplayMode) {
+        startDifficulty = 'small'; // Lock non-standard modes to small
+    }
+    
     document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
     
     const activeBtn = document.querySelector(`.diff-btn[data-diff="${startDifficulty}"]`);
@@ -199,25 +206,98 @@ async function run() {
     }
     game.init(startDifficulty);
 
-    if (urlParams.get('autoplay') === startDifficulty) {
+    if (autoplayMode) {
         // Wait for visual initialization and then start solving
         setTimeout(() => {
             const solution = Solver.solve(game.state, 20000);
             if (solution) {
+                if (autoplayMode === 'fail') {
+                    // Generate a bad path: 3 correct moves, then back-and-forth
+                    const badPath = [];
+                    for(let i=0; i<Math.min(3, solution.length); i++) badPath.push(solution[i]);
+                    if (solution.length > 0 && solution[0].type === 'MOVE') {
+                        const m = solution[0];
+                        badPath.push({ type: 'MOVE', dx: -m.dx, dy: -m.dy });
+                        badPath.push(m);
+                        badPath.push({ type: 'MOVE', dx: -m.dx, dy: -m.dy });
+                    }
+                    game.actionQueue = badPath;
+                } else if (autoplayMode === 'interactive') {
+                    game.actionQueue = solution.slice(0, -1);
+                } else {
+                    game.actionQueue = solution;
+                }
+
+                let phase = autoplayMode === 'fail' ? 'failing' : 'standard';
+
                 // Add a delay between moves for better visual capture
                 game.processNextAction = function() {
                   if (this.actionQueue && this.actionQueue.length > 0 && !this.state.gameOver && !this.state.win) {
                       const nextAction = this.actionQueue.shift();
                       setTimeout(() => {
                          this.applyAction(nextAction);
-                      }, 130); // Wait 130ms between actions so it doesn't solve instantly and overlap logic
+                      }, phase === 'recovery' ? 80 : 130);
                   } else if (this.state.win) {
-                      // Trigger recording stop by setting a flag the puppeteer script can see
                       window._GAME_WON = true;
+                  } else if (phase === 'failing' && this.actionQueue.length === 0) {
+                      // We finished the bad path. Force game over visually.
+                      this.state.gameOver = true;
+                      this.updateStatus("Game Over!");
+                      this.render();
+                      
+                      setTimeout(() => {
+                          game.reset();
+                          setTimeout(() => {
+                              phase = 'recovery';
+                              game.actionQueue = Solver.solve(game.state, 20000);
+                              game.processNextAction();
+                          }, 1000);
+                      }, 2000);
+                  } else if (autoplayMode === 'interactive' && this.actionQueue.length === 0 && !this.state.win) {
+                      const overlay = document.createElement('div');
+                      overlay.style.position = 'absolute';
+                      overlay.style.top = '50%'; overlay.style.left = '50%';
+                      overlay.style.transform = 'translate(-50%, -50%)';
+                      overlay.style.backgroundColor = 'rgba(0,0,0,0.8)';
+                      overlay.style.color = 'white';
+                      overlay.style.padding = '30px';
+                      overlay.style.borderRadius = '15px';
+                      overlay.style.fontSize = '36px';
+                      overlay.style.fontWeight = 'bold';
+                      overlay.style.textAlign = 'center';
+                      overlay.style.zIndex = '1000';
+                      overlay.style.boxShadow = '0 10px 25px rgba(0,0,0,0.5)';
+                      
+                      const finalMove = solution[solution.length - 1];
+                      const labels = { '0,-1': 'UP', '0,1': 'DOWN', '-1,0': 'LEFT', '1,0': 'RIGHT' };
+                      const correctLabel = finalMove.type === 'MOVE' ? labels[`${finalMove.dx},${finalMove.dy}`] : 'THROW';
+                      const badLabels = Object.values(labels).filter(l => l !== correctLabel);
+                      const badLabel = badLabels[Math.floor(Math.random() * badLabels.length)];
+                      const isA = Math.random() > 0.5;
+                      
+                      overlay.innerHTML = `Which move wins?<br/><br/><span style="color:#4ade80">A: ${isA ? correctLabel : badLabel}</span><br/><span style="color:#f87171">B: ${!isA ? correctLabel : badLabel}</span>`;
+                      document.querySelector('.board-wrapper').appendChild(overlay);
+
+                      let timerCount = 5;
+                      const timerEl = document.createElement('div');
+                      timerEl.style.marginTop = '20px';
+                      timerEl.style.color = '#facc15';
+                      timerEl.textContent = timerCount;
+                      overlay.appendChild(timerEl);
+
+                      const countdown = setInterval(() => {
+                          timerCount--;
+                          timerEl.textContent = timerCount;
+                          if (timerCount <= 0) {
+                              clearInterval(countdown);
+                              overlay.remove();
+                              game.actionQueue = [finalMove];
+                              game.processNextAction();
+                          }
+                      }, 1000);
                   }
                 };
                 
-                game.actionQueue = solution;
                 game.processNextAction();
             } else {
                 console.error("Autoplay failed to solve the map.");
