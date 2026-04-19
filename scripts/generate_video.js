@@ -155,6 +155,9 @@ async function main() {
 }
 
 main().then(() => {
+    if (!fs.existsSync(FINAL_VIDEO) || fs.statSync(FINAL_VIDEO).size < 1024) {
+        throw new Error("Final video was not created or is empty!");
+    }
     console.log("Process complete. Exiting natively.");
     process.exit(0);
 }).catch(err => {

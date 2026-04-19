@@ -55,8 +55,8 @@ jobs:
           CAPTION="${CAPTIONS[$R_INDEX]} #"$(date +'%Y%m%d')
           YT_TITLE="${YOUTUBE_TITLES[$R_INDEX]}"
           
-          curl -X POST -H "Content-Type: application/json" \
+          curl --fail --silent --show-error -X POST -H "Content-Type: application/json" \
           -d "{\"video_url\": \"https://go-rabbit-4af82.web.app/daily_video.mp4\", \"text\": \"$CAPTION\", \"youtube_title\": \"$YT_TITLE\", \"target_channel\": \"all\"}" \
-          https://hooks.zapier.com/hooks/catch/27231889/ujm5mjh/
+          https://hooks.zapier.com/hooks/catch/27231889/ujm5mjh/ || exit 1
           
           echo "Deployed public video and pinged Zapier!"
