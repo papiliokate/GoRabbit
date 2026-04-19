@@ -448,29 +448,28 @@ export class GameMode {
 
     const modal = document.getElementById('victory-modal');
     const textEl = document.getElementById('victory-text');
-    const nextBtn = document.getElementById('victory-next');
-    const shareBtn = document.getElementById('victory-share');
     const hudShareBtn = document.getElementById('hud-share');
     
-    if (modal && textEl && nextBtn) {
-        textEl.innerHTML = `Completed in <strong>${this.state.moveCount} moves</strong>!<br/>Time: <strong>${this.totalTimeStr}</strong>`;
+    if (modal && textEl) {
+        textEl.innerHTML = `Completed Map ${window.currentMapIndex + 1}/5 in <strong>${this.state.moveCount} moves</strong>!<br/>Time: <strong>${this.totalTimeStr}</strong>`;
         modal.style.display = 'flex';
         
-        if (shareBtn) {
-            shareBtn.textContent = "Share Result";
-            shareBtn.onclick = () => {
-                this.copyShareText(shareBtn);
-            };
+        const regActions = document.getElementById('victory-regular-actions');
+        const grandActions = document.getElementById('victory-grand-actions');
+        
+        if (window.currentMapIndex >= 4) {
+            if (regActions) regActions.style.display = 'none';
+            if (grandActions) grandActions.style.display = 'flex';
+            textEl.innerHTML = `<strong>Set Complete!</strong><br/>You beat all 5 maps.`;
+        } else {
+            if (regActions) regActions.style.display = 'flex';
+            if (grandActions) grandActions.style.display = 'none';
         }
         
         if (hudShareBtn) {
             hudShareBtn.style.display = 'block';
             hudShareBtn.onclick = () => this.copyShareText(hudShareBtn);
         }
-        
-        nextBtn.onclick = () => {
-            modal.style.display = 'none';
-        };
     }
   }
 

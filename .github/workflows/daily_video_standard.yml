@@ -1,13 +1,16 @@
 name: Daily Video - Randomized
 
 on:
-  schedule:
-    - cron: '30 0 * * *'
+  workflow_run:
+    workflows: ["Generate Daily Maps"]
+    types:
+      - completed
   workflow_dispatch:
 
 jobs:
   generate-video:
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     
     steps:
       - name: Checkout repository

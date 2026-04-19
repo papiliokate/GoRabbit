@@ -71,13 +71,14 @@ export class TimeService {
         return `New puzzles in.. ${hStr}:${mStr}:${sStr} (Local: ${nextReset.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})})`;
     }
 
-    static checkNeedRefresh() {
-        if (!this.currentUtcDateStr) return false;
-        
+    static getLiveUtcDateStr() {
         const now = new Date(Date.now() + this.serverClientOffsetMs);
         const adjustedDate = new Date(now.getTime() - 60000);
-        const liveUtcDateStr = adjustedDate.toISOString().split('T')[0];
-        
-        return liveUtcDateStr !== this.currentUtcDateStr;
+        return adjustedDate.toISOString().split('T')[0];
+    }
+
+    static checkNeedRefresh() {
+        if (!this.currentUtcDateStr) return false;
+        return this.getLiveUtcDateStr() !== this.currentUtcDateStr;
     }
 }

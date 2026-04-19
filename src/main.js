@@ -37,7 +37,10 @@ document.querySelector('#app').innerHTML = `
           <button class="diff-btn" data-diff="extra_large">XL</button>
           <button id="reset-btn">↻</button>
         </div>
-        <div id="daily-countdown">Connecting to Time Service...</div>
+        <div id="daily-countdown" style="display: flex; justify-content: space-between; align-items: center;">
+            <span id="countdown-text">Connecting to Time Service...</span>
+            <button id="btn-binge-play" style="display: none; padding: 4px 10px; font-size: 0.9rem; background: linear-gradient(135deg, #e91e63 0%, #ff6090 100%); color: white; border-radius: 12px; border: 1px solid white;">🎟️ <span id="binge-count">0</span> Sets</button>
+        </div>
       </div>
       <div id="hud-panel">
         <div id="status">Select a difficulty to start!</div>
@@ -83,10 +86,24 @@ document.querySelector('#app').innerHTML = `
     <div class="modal-content victory-content">
       <h2 class="victory-title">Level Complete!</h2>
       <p id="victory-text"></p>
-      <div style="display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 20px;">
-        <button id="victory-share" style="background-color: var(--medium); width: 200px;">Share Result</button>
-        <button id="victory-next" style="width: 200px;">Close</button>
+      
+      <!-- Regular Next Map Button -->
+      <div id="victory-regular-actions" style="display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 20px;">
+        <button id="victory-next" class="primary-btn" style="width: 100%;">Next Map</button>
       </div>
+      
+      <!-- Grand Binge UI (Map 5) -->
+      <div id="victory-grand-actions" style="display: none; flex-direction: column; gap: 10px; align-items: center; margin-top: 20px;">
+        <button id="btn-remind-tomorrow" class="primary-btn" style="width: 100%;">🔔 Remind me Tomorrow</button>
+        <button id="btn-share-free" class="primary-btn" style="width: 100%;">📤 Share for 1 Free Set</button>
+        <button id="btn-buy-binge" class="premium-btn" style="width: 100%; background: linear-gradient(135deg, #e91e63 0%, #ff6090 100%);">🎟️ Binge Sets ($0.99)</button>
+        
+        <div class="cross-promo" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px; width: 100%; text-align: center;">
+            <p style="margin-bottom: 10px;">Loved this? Try our other game!</p>
+            <a href="https://she-sells-sea-shells.web.app" class="promo-btn" style="display: block; padding: 10px; background: #9c27b0; color: white; border-radius: 10px; text-decoration: none;">🐚 Play She Sells Sea Shells</a>
+        </div>
+      </div>
+      
     </div>
   </div>
 `;
@@ -124,22 +141,64 @@ const inventoryEl = document.getElementById('inventory');
 const resetBtn = document.getElementById('reset-btn');
 const timerEl = document.getElementById('timer');
 const bestTimerEl = document.getElementById('best-timer');
-const countdownEl = document.getElementById('daily-countdown');
+const countdownEl = document.getElementById('countdown-text');
 
 const game = new GameMode(boardEl, statusEl, inventoryEl, timerEl, bestTimerEl);
+
+window.currentMapIndex = 0;
+let bingeSetsCount = parseInt(localStorage.getItem("bingeSetsCount") || "0");
+
+function updateBingeUI() {
+    const btn = document.getElementById("btn-binge-play");
+    const countEl = document.getElementById("binge-count");
+    if (bingeSetsCount > 0) {
+        countEl.textContent = bingeSetsCount;
+        btn.style.display = "inline-block";
+    } else {
+        btn.style.display = "none";
+    }
+}
+updateBingeUI();
 
 document.querySelectorAll('.diff-btn').forEach(btn => {
   btn.addEventListener('click', (e) => {
     document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
     e.target.classList.add('active');
     const diff = e.target.dataset.diff;
+    window.currentMapIndex = 0;
     if (diff !== 'tutorial' && TimeService.currentUtcDateStr) {
-        Random.setSeed(TimeService.currentUtcDateStr + "-v3-" + diff);
+        Random.setSeed(TimeService.currentUtcDateStr + "-v3-" + diff + "-" + window.currentMapIndex);
     } else {
         Random.setSeed(null);
     }
     game.init(diff);
   });
+});
+
+window.loadNextMapInSet = function(diff) {
+    window.currentMapIndex++;
+    if (TimeService.currentUtcDateStr) {
+        Random.setSeed(TimeService.currentUtcDateStr + "-v3-" + diff + "-" + window.currentMapIndex);
+    }
+    game.init(diff);
+};
+
+window.consumeBingeSetAndPlay = function(diff) {
+    if (bingeSetsCount > 0) {
+        bingeSetsCount--;
+        localStorage.setItem("bingeSetsCount", bingeSetsCount);
+        updateBingeUI();
+        window.currentMapIndex = 0;
+        // completely randomize seed for binge sets
+        Random.setSeed(Date.now() + "-" + Math.random() + "-" + diff);
+        game.init(diff);
+    }
+};
+
+document.getElementById("btn-binge-play").addEventListener("click", () => {
+    const activeBtn = document.querySelector('.diff-btn.active');
+    if (!activeBtn) return;
+    window.consumeBingeSetAndPlay(activeBtn.dataset.diff);
 });
 
 resetBtn.addEventListener('click', () => {
@@ -156,10 +215,15 @@ async function fetchDailyMaps() {
         if (res.ok) {
             window.dailyMaps = await res.json();
             console.log("Loaded daily maps from server.");
+            if (window.dailyMaps._date) {
+                TimeService.currentUtcDateStr = window.dailyMaps._date;
+            }
+            return true;
         }
     } catch (e) {
         console.warn("Could not fetch daily maps, falling back to local generation.", e);
     }
+    return false;
 }
 
 async function run() {
@@ -167,16 +231,34 @@ async function run() {
     await TimeService.fetchTime();
     await fetchDailyMaps();
 
-    setInterval(() => {
+    let nextCheckTime = 0;
+    setInterval(async () => {
         if (TimeService.checkNeedRefresh()) {
-            countdownEl.textContent = "Loading new puzzles...";
-            location.reload();
-            return;
+            const now = Date.now();
+            countdownEl.textContent = "Generating new puzzles... Stand by.";
+            if (now > nextCheckTime) {
+                try {
+                    const res = await fetch('/daily_maps.json?v=' + Date.now());
+                    if (res.ok) {
+                        const newData = await res.json();
+                        if (newData._date && newData._date === TimeService.getLiveUtcDateStr()) {
+                            countdownEl.textContent = "Loading new puzzles...";
+                            location.reload();
+                            return;
+                        }
+                    }
+                } catch (e) {}
+                nextCheckTime = now + 60000; // Poll every 60s
+            }
+        } else {
+            countdownEl.textContent = TimeService.getNextResetTimeStr();
         }
-        countdownEl.textContent = TimeService.getNextResetTimeStr();
     }, 1000);
+
     if (!TimeService.checkNeedRefresh()) {
         countdownEl.textContent = TimeService.getNextResetTimeStr();
+    } else {
+        countdownEl.textContent = "Generating new puzzles... Stand by.";
     }
 
     // Start with small by default
@@ -193,12 +275,96 @@ async function run() {
     const activeBtn = document.querySelector(`.diff-btn[data-diff="${startDifficulty}"]`);
     if (activeBtn) activeBtn.classList.add('active');
     
+    window.currentMapIndex = 0;
     if (startDifficulty !== 'tutorial' && TimeService.currentUtcDateStr) {
-        Random.setSeed(TimeService.currentUtcDateStr + "-v3-" + startDifficulty);
+        Random.setSeed(TimeService.currentUtcDateStr + "-v3-" + startDifficulty + "-0");
     } else {
         Random.setSeed(null);
     }
     game.init(startDifficulty);
+
+    // MOCK EVENT LISTENERS FOR BINGE LOGIC
+    document.getElementById("victory-next").addEventListener("click", () => {
+        document.getElementById("victory-modal").style.display = "none";
+        window.loadNextMapInSet(startDifficulty);
+    });
+
+    document.getElementById("btn-remind-tomorrow").addEventListener("click", () => {
+       alert("You'll be reminded! (Push coming soon)");
+    });
+
+    document.getElementById("btn-share-free").addEventListener("click", () => {
+        const text = `I just dominated a Set of 5 maps in Go Rabbit! Can you? 🐇`;
+        if (navigator.share) {
+            navigator.share({ title: 'Go Rabbit', text, url: window.location.origin }).then(() => {
+                bingeSetsCount++;
+                localStorage.setItem("bingeSetsCount", bingeSetsCount);
+                updateBingeUI();
+                setTimeout(() => window.consumeBingeSetAndPlay(startDifficulty), 1000);
+            }).catch(e => console.warn(e));
+        } else {
+            navigator.clipboard.writeText(window.location.origin).then(() => {
+                bingeSetsCount++;
+                localStorage.setItem("bingeSetsCount", bingeSetsCount);
+                updateBingeUI();
+                alert("Link copied! Enjoy 1 Free Binge Set.");
+                setTimeout(() => window.consumeBingeSetAndPlay(startDifficulty), 1000);
+            });
+        }
+    });
+
+    document.getElementById("btn-buy-binge").addEventListener("click", () => {
+        alert("Simulating Purchase... Use Dev Harness or localStorage.");
+    });
+    
+    // TEST HARNESS HOOKS
+    window.addEventListener("message", (e) => {
+        try {
+            if (!e.data || !e.data.type) return;
+            switch (e.data.type) {
+                case "MOCK_PURCHASE":
+                    console.log("Mock purchase event received in main.js");
+                    bingeSetsCount += 5;
+                    localStorage.setItem("bingeSetsCount", bingeSetsCount);
+                    updateBingeUI();
+                    console.log("victory modal style:", document.getElementById("victory-modal").style.display);
+                    if (document.getElementById("victory-modal").style.display !== "none") {
+                        document.getElementById("victory-modal").style.display = "none";
+                        const activeBtn = document.querySelector('.diff-btn.active');
+                        if (activeBtn) window.consumeBingeSetAndPlay(activeBtn.dataset.diff);
+                    }
+                    if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'PURCHASE_SUCCESS' }, "*");
+                    break;
+                case "FORCE_WIN":
+                    console.log("Force win event received in main.js", { game, state: game ? game.state : null });
+                    if (game && game.state) {
+                        game.state.gameOver = true;
+                        game.state.win = true;
+                        game.stopTimer();
+                        game.showVictoryBanner();
+                        game.render();
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'LOG', message: `Force Win Triggered` }, "*");
+                    }
+                    break;
+                case "ADD_POINTS":
+                    if (game && game.state) {
+                        game.state.lettuce += 50;
+                        game.state.eggs += 50;
+                        game.updateStatus("Cheat Activated!");
+                        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'LOG', message: `Ammo updated` }, "*");
+                    }
+                    break;
+                case "RESET_DATA":
+                    localStorage.clear();
+                    if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'LOG', message: `Local Storage Wiped. Reloading...` }, "*");
+                    setTimeout(() => location.reload(), 500);
+                    break;
+            }
+        } catch (err) {
+            console.error("TEST HARNESS ERROR:", err);
+            if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'LOG', message: `ERROR: ${err.message}` }, "*");
+        }
+    });
 
     if (autoplayMode) {
         // Wait for visual initialization and then start solving

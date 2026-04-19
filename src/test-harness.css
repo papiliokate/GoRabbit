@@ -1,0 +1,189 @@
+:root {
+    --harness-bg: #1e1e24;
+    --harness-panel: #2b2b36;
+    --harness-text: #e0e0e0;
+    --harness-accent: #00bcd4;
+    --harness-btn-bg: #444455;
+    --harness-btn-hover: #55556a;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Nunito', sans-serif;
+    background-color: var(--harness-bg);
+    color: var(--harness-text);
+    height: 100vh;
+    overflow: hidden;
+}
+
+#harness-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Sidebar Styling */
+#harness-sidebar {
+    width: 320px;
+    background-color: var(--harness-panel);
+    border-right: 1px solid #111;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+    z-index: 10;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #444;
+}
+
+.sidebar-header h2 {
+    font-family: 'Fredoka', sans-serif;
+    margin: 0;
+    color: var(--harness-accent);
+}
+
+.sidebar-header p {
+    margin: 5px 0 0;
+    font-size: 0.9rem;
+    color: #999;
+}
+
+.control-group {
+    background: rgba(0,0,0,0.15);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 1px solid #333;
+}
+
+.control-group h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1rem;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.control-row {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+label {
+    font-size: 0.85rem;
+    color: #bbb;
+}
+
+select, button {
+    font-family: 'Nunito', sans-serif;
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+    background: var(--harness-btn-bg);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background 0.2s, transform 0.1s;
+}
+
+select {
+    appearance: none;
+    border: 1px solid #555;
+}
+
+button:hover {
+    background: var(--harness-btn-hover);
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button.action-btn {
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+button.mock-purchase {
+    background: #e91e63;
+}
+
+button.mock-purchase:hover {
+    background: #d81b60;
+}
+
+/* Console Styling */
+#dev-console {
+    height: 150px;
+    background: #000;
+    border-radius: 6px;
+    padding: 10px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #0f0;
+}
+
+.log-entry {
+    margin-bottom: 4px;
+    word-wrap: break-word;
+}
+.log-entry.system { color: #888; }
+.log-entry.incoming { color: #00bcd4; }
+.log-entry.outgoing { color: #ffeb3b; }
+
+/* Stage Styling */
+#harness-stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #1a1a20;
+    position: relative;
+    overflow: auto;
+    /* Adding a grid overlay for precise viewing */
+    background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-size: 50px 50px;
+}
+
+#device-wrapper {
+    position: relative;
+    transition: width 0.3s ease, height 0.3s ease;
+    border: 10px solid #000;
+    border-radius: 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+    background: #fff;
+    overflow: hidden;
+}
+
+#device-wrapper.responsive {
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    width: 100%;
+    height: 100%;
+}
+
+#game-frame {
+    width: 100%;
+    height: 100%;
+    display: block;
+    border: none;
+    /* Hide scrollbars strictly on iframe level since we are emulating perfect fit */
+    overflow: hidden;
+}

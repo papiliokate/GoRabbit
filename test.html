@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dev Environment | Go Rabbit</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/test-harness.css">
+</head>
+<body>
+    <div id="harness-container">
+        <!-- Sidebar Controls -->
+        <aside id="harness-sidebar">
+            <div class="sidebar-header">
+                <h2>Dev Harness</h2>
+                <p>Environment v1.0</p>
+            </div>
+
+            <!-- Emulation Controls -->
+            <section class="control-group">
+                <h3>Device Emulation</h3>
+                <div class="control-row">
+                    <label for="device-preset">Preset:</label>
+                    <select id="device-preset">
+                        <option value="responsive">Responsive (Fill)</option>
+                        <option value="iphone14">iPhone 14 / Pixel 7 (390x844)</option>
+                        <option value="iphone14promax">iPhone 14 Pro Max (430x932)</option>
+                        <option value="ipadmini">iPad Mini (768x1024)</option>
+                    </select>
+                </div>
+                <div class="control-row">
+                    <button id="btn-rotate-device">↻ Rotate Device</button>
+                    <button id="btn-reload-frame">⟳ Reload Game</button>
+                </div>
+            </section>
+
+            <!-- Test Behaviors -->
+            <section class="control-group">
+                <h3>Mock Behaviors</h3>
+                <div class="control-row">
+                    <button id="btn-grant-points" class="action-btn">💰 Grant 50 Points</button>
+                </div>
+                <div class="control-row">
+                    <button id="btn-mock-purchase" class="action-btn mock-purchase">🛍️ Simulate Purchase</button>
+                </div>
+                <div class="control-row">
+                    <button id="btn-force-win" class="action-btn">🏆 Force Win State</button>
+                </div>
+                <div class="control-row" style="margin-top: 15px;">
+                    <button id="btn-reset-data" class="action-btn" style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);">🗑️ Reset Save Data</button>
+                </div>
+            </section>
+            
+            <section class="control-group">
+                <h3>Console</h3>
+                <div id="dev-console">
+                    <div class="log-entry system">Harness initialized. Waiting for game iframe...</div>
+                </div>
+            </section>
+        </aside>
+
+        <!-- Main Stage -->
+        <main id="harness-stage">
+            <div id="device-wrapper">
+                <iframe id="game-frame" src="/index.html?testMode=1" frameborder="0"></iframe>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="/src/test-harness.js"></script>
+</body>
+</html>
