@@ -30,24 +30,57 @@ async function main() {
     server.stderr.on('data', (data) => console.error("VITE ERROR:", data.toString()));
     server.stdout.on('data', (data) => console.log("VITE:", data.toString()));
 
-    console.log("Waiting 5 seconds for Vite dev server to boot...");
-    await sleep(5000);
-
-    console.log("Assuming Server is ready!");
+    console.log("Waiting for Vite dev server to boot...");
+    let viteReady = false;
+    for (let i = 0; i < 30; i++) {
+        try {
+            const res = await fetch("http://127.0.0.1:5173/");
+            if (res.ok) { viteReady = true; break; }
+        } catch (e) {}
+        await sleep(500);
+    }
+    if (!viteReady) throw new Error("Vite server failed to start.");
+    console.log("Server is ready!");
 
     const FORMAT = process.env.FORMAT || 'standard';
     console.log(`Generating video for format: ${FORMAT}`);
     
+    const ttsPools = {
+        standard: [
+            "Welcome to today's Go Rabbit challenge. Can you find the winning moves? Click the link on our profile to play for free!",
+            "It's time for the daily Go Rabbit puzzle! Can you beat it? Play for free at the link in our bio.",
+            "Another day, another maze to solve. Head to our profile to play Go Rabbit for free!",
+            "Can you guide the rabbit to the end? Play today's level via the link in our bio.",
+            "Let's see if you can solve this path. Try it yourself for free at the link in our profile!"
+        ],
+        fail: [
+            "I literally cannot believe the bot missed this move. Try to beat today's map at the link in our bio!",
+            "What a blunder! The AI completely messed up. Think you can do better? Link in bio to play.",
+            "Even the bot makes mistakes sometimes. Can you solve this puzzle? Try it via our profile link.",
+            "This map is so hard, even the bot struggled. Prove you're better by playing at the link in our bio!",
+            "Oops, wrong way! Don't make the same mistake. Play for free using the link in our profile."
+        ],
+        interactive: [
+            "Only 1% of players get this final move right. Which path wins the game? Play for free via the link in our profile!",
+            "Which direction does the rabbit need to go? Let us know and play for free at the link in our bio.",
+            "Can you spot the winning path? Test your map reading skills via the link in our profile.",
+            "One wrong move and it's over. Which path is correct? Link in bio to play!",
+            "Are you a maze master? Find the final move and play the full game for free using the link in our bio."
+        ]
+    };
+
     let urlParam = 'small';
-    let ttsText = "Welcome to today's Go Rabbit challenge. Can you find the winning moves?";
+    let pool = ttsPools.standard;
     
     if (FORMAT === 'fail') {
         urlParam = 'fail';
-        ttsText = "I literally cannot believe the bot missed this move. Try to beat today's map!";
+        pool = ttsPools.fail;
     } else if (FORMAT === 'interactive') {
         urlParam = 'interactive';
-        ttsText = "Only 1% of players get this final move right. Which path wins the game?";
+        pool = ttsPools.interactive;
     }
+
+    const ttsText = pool[Math.floor(Math.random() * pool.length)];
 
     console.log("Generating TTS audio...");
     try {
@@ -104,13 +137,10 @@ async function main() {
     
     let gameWon = false;
     for (let i = 0; i < 240; i++) { // Max wait 120 seconds to accommodate interactive pause
-        gameWon = await page.evaluate(() => window._GAME_WON === true);
+        gameWon = await page.evaluate(() => window._VIDEO_RECORDING_DONE === true);
         if (gameWon) break;
         await sleep(500);
     }
-    
-    // Wait a couple of seconds after win to capture the victory state
-    await sleep(5000);
 
     console.log("Gameplay finished. Saving video...");
     await recorder.stop();

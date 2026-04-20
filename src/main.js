@@ -4,7 +4,9 @@ import { TimeService } from './time_service.js';
 import { Random } from './random.js';
 import { Solver } from './solver.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-analytics.js";
+import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-analytics.js";
+
+let analytics; // Declare analytics outside try so it can be used later
 
 if (import.meta.env.VITE_FIREBASE_API_KEY) {
   try {
@@ -18,11 +20,19 @@ if (import.meta.env.VITE_FIREBASE_API_KEY) {
       measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
     };
     const app = initializeApp(firebaseConfig);
-    getAnalytics(app);
+    analytics = getAnalytics(app);
   } catch (e) {
     console.warn("Analytics error:", e);
   }
 }
+
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    deferredPrompt = e;
+});
 
 document.querySelector('#app').innerHTML = `
   <div id="game-container">
@@ -90,17 +100,21 @@ document.querySelector('#app').innerHTML = `
       <!-- Regular Next Map Button -->
       <div id="victory-regular-actions" style="display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 20px;">
         <button id="victory-next" class="primary-btn" style="width: 100%;">Next Map</button>
+        <div class="cross-promo" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px; width: 100%; text-align: center;">
+            <p style="margin-bottom: 10px;">Play a different game</p>
+            <a href="https://oops-games-hub.web.app" class="promo-btn" style="display: block; padding: 10px; background: #9c27b0; color: white; border-radius: 10px; text-decoration: none;">🎮 Go to Games Hub</a>
+        </div>
       </div>
       
       <!-- Grand Binge UI (Map 5) -->
       <div id="victory-grand-actions" style="display: none; flex-direction: column; gap: 10px; align-items: center; margin-top: 20px;">
-        <button id="btn-remind-tomorrow" class="primary-btn" style="width: 100%;">🔔 Remind me Tomorrow</button>
-        <button id="btn-share-free" class="primary-btn" style="width: 100%;">📤 Share for 1 Free Set</button>
+        <button id="btn-remind-tomorrow" class="primary-btn" style="width: 100%;">📲 Add to Device</button>
+        <button id="btn-share-free" class="primary-btn" style="width: 100%;">📤 Brag and get free puzzles</button>
         <button id="btn-buy-binge" class="premium-btn" style="width: 100%; background: linear-gradient(135deg, #e91e63 0%, #ff6090 100%);">🎟️ Binge Sets ($0.99)</button>
         
         <div class="cross-promo" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px; width: 100%; text-align: center;">
-            <p style="margin-bottom: 10px;">Loved this? Try our other game!</p>
-            <a href="https://she-sells-sea-shells.web.app" class="promo-btn" style="display: block; padding: 10px; background: #9c27b0; color: white; border-radius: 10px; text-decoration: none;">🐚 Play She Sells Sea Shells</a>
+            <p style="margin-bottom: 10px;">Play a different game</p>
+            <a href="https://oops-games-hub.web.app" class="promo-btn" style="display: block; padding: 10px; background: #9c27b0; color: white; border-radius: 10px; text-decoration: none;">🎮 Go to Games Hub</a>
         </div>
       </div>
       
@@ -131,7 +145,16 @@ if (isTikTok) {
     const victory = document.createElement('div');
     victory.id = 'tiktok-victory-display';
     victory.className = 'tiktok-victory';
-    victory.innerHTML = '<h2>Victory!</h2><div class="stats" id="tiktok-stats"></div><div class="challenge">Can you beat this?</div>';
+    victory.innerHTML = `
+        <h2>Victory!</h2>
+        <div class="stats" id="tiktok-stats"></div>
+        <div class="challenge" style="margin-bottom: 20px;">Play all our games for free!</div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 15px; background: linear-gradient(135deg, #ff416c, #ff4b2b); padding: 20px 40px; border-radius: 40px; font-weight: bold; font-size: 1.8rem; box-shadow: 0 8px 16px rgba(0,0,0,0.4); animation: pulseCTA 1s infinite alternate; color: white;">
+             <span style="font-size: 2.5rem;">🔗</span>
+             <span>LINK IN BIO TO PLAY</span>
+        </div>
+        <style>@keyframes pulseCTA { 0% { transform: scale(1); box-shadow: 0 8px 16px rgba(255, 65, 108, 0.4); } 100% { transform: scale(1.05); box-shadow: 0 15px 30px rgba(255, 65, 108, 0.7); } }</style>
+    `;
     document.body.appendChild(victory);
 }
 
@@ -283,38 +306,55 @@ async function run() {
     }
     game.init(startDifficulty);
 
-    // MOCK EVENT LISTENERS FOR BINGE LOGIC
     document.getElementById("victory-next").addEventListener("click", () => {
         document.getElementById("victory-modal").style.display = "none";
-        window.loadNextMapInSet(startDifficulty);
+        const currentDiff = game.difficulty || 'small';
+        window.loadNextMapInSet(currentDiff);
     });
 
     document.getElementById("btn-remind-tomorrow").addEventListener("click", () => {
-       alert("You'll be reminded! (Push coming soon)");
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the install prompt');
+                }
+                deferredPrompt = null;
+            });
+        } else {
+            alert("Added to device!");
+        }
     });
 
     document.getElementById("btn-share-free").addEventListener("click", () => {
-        const text = `I just dominated a Set of 5 maps in Go Rabbit! Can you? 🐇`;
+        const currentDiff = game.difficulty || 'small';
+        const bestTimeStr = document.getElementById('best-timer').innerText || "00:00.0";
+        const grid = Array(5).fill("").map(() => Math.random() > 0.3 ? "🟩" : "🥬").join("");
+        
+        const text = `Go Rabbit 🐇 Map: ${currentDiff.toUpperCase()} | Best: ${bestTimeStr}\n${grid}`;
         if (navigator.share) {
-            navigator.share({ title: 'Go Rabbit', text, url: window.location.origin }).then(() => {
+            navigator.share({ title: 'Go Rabbit', text }).then(() => {
                 bingeSetsCount++;
                 localStorage.setItem("bingeSetsCount", bingeSetsCount);
                 updateBingeUI();
-                setTimeout(() => window.consumeBingeSetAndPlay(startDifficulty), 1000);
+                setTimeout(() => window.consumeBingeSetAndPlay(currentDiff), 1000);
             }).catch(e => console.warn(e));
         } else {
-            navigator.clipboard.writeText(window.location.origin).then(() => {
+            navigator.clipboard.writeText(text).then(() => {
                 bingeSetsCount++;
                 localStorage.setItem("bingeSetsCount", bingeSetsCount);
                 updateBingeUI();
-                alert("Link copied! Enjoy 1 Free Binge Set.");
-                setTimeout(() => window.consumeBingeSetAndPlay(startDifficulty), 1000);
+                alert("Copied to clipboard! Enjoy 1 Free Binge Set.");
+                setTimeout(() => window.consumeBingeSetAndPlay(currentDiff), 1000);
             });
         }
     });
 
     document.getElementById("btn-buy-binge").addEventListener("click", () => {
-        alert("Simulating Purchase... Use Dev Harness or localStorage.");
+        if (analytics) {
+            logEvent(analytics, 'binge_presale_click');
+        }
+        window.location.href = '/presale.html';
     });
     
     // TEST HARNESS HOOKS
@@ -399,6 +439,11 @@ async function run() {
                       }, phase === 'recovery' ? 80 : 130);
                   } else if (this.state.win) {
                       window._GAME_WON = true;
+                      // Explicit hold for video ending capture
+                      if (!window._VIDEO_RECORDING_DONE_TIMEOUT_SET) {
+                          window._VIDEO_RECORDING_DONE_TIMEOUT_SET = true;
+                          setTimeout(() => window._VIDEO_RECORDING_DONE = true, 4000);
+                      }
                   } else if (phase === 'failing' && this.actionQueue.length === 0) {
                       // We finished the bad path. Force game over visually.
                       this.state.gameOver = true;
