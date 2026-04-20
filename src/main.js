@@ -198,12 +198,29 @@ document.querySelectorAll('.diff-btn').forEach(btn => {
   });
 });
 
+const DIFF_PROGRESSION = ['small', 'medium', 'large', 'extra_large'];
+
 window.loadNextMapInSet = function(diff) {
+    let diffIdx = DIFF_PROGRESSION.indexOf(diff);
+    if (diffIdx === -1 && diff !== 'extra_large') diffIdx = -1; // e.g. tutorial
+
+    let nextDiff = diff;
+    if (diffIdx >= 0 && diffIdx < DIFF_PROGRESSION.length - 1) {
+        nextDiff = DIFF_PROGRESSION[diffIdx + 1];
+    } else if (diffIdx === -1) {
+        nextDiff = 'small';
+    }
+    
+    // Update active UI button
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    const activeBtn = document.querySelector(`.diff-btn[data-diff="${nextDiff}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+
     window.currentMapIndex++;
     if (TimeService.currentUtcDateStr) {
-        Random.setSeed(TimeService.currentUtcDateStr + "-v3-" + diff + "-" + window.currentMapIndex);
+        Random.setSeed(TimeService.currentUtcDateStr + "-v3-" + nextDiff + "-" + window.currentMapIndex);
     }
-    game.init(diff);
+    game.init(nextDiff);
 };
 
 window.consumeBingeSetAndPlay = function(diff) {
