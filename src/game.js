@@ -448,10 +448,12 @@ export class GameMode {
 
     const modal = document.getElementById('victory-modal');
     const textEl = document.getElementById('victory-text');
+    const cypherEl = document.getElementById('victory-cypher');
     const hudShareBtn = document.getElementById('hud-share');
     
     if (modal && textEl) {
         textEl.innerHTML = `Completed Map ${window.currentMapIndex + 1}/5 in <strong>${this.state.moveCount} moves</strong>!<br/>Time: <strong>${this.totalTimeStr}</strong>`;
+        if (cypherEl && window.getDailyCypher) cypherEl.textContent = window.getDailyCypher(0);
         modal.style.display = 'flex';
         
         const regActions = document.getElementById('victory-regular-actions');
