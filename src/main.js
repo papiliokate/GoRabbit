@@ -56,7 +56,7 @@ if (import.meta.env.VITE_FIREBASE_API_KEY) {
       storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
       messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
       appId: import.meta.env.VITE_FIREBASE_APP_ID,
-      measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+      measurementId: "G-BJLK9339LN",
     };
     const app = initializeApp(firebaseConfig);
     analytics = getAnalytics(app);
@@ -135,7 +135,6 @@ document.querySelector('#app').innerHTML = `
     <div class="modal-content victory-content">
       <h2 class="victory-title">Level Complete!</h2>
       <p id="victory-text"></p>
-      <p id="victory-cypher" style="font-size: 1.5rem; font-family: monospace; letter-spacing: 4px; color: #333; margin: 15px auto; font-weight: bold; background: #eee; padding: 10px; border-radius: 10px; border: 2px dashed #ccc; width: fit-content;"></p>
       
       <!-- Regular Next Map Button -->
       <div id="victory-regular-actions" style="display: flex; flex-direction: column; gap: 10px; align-items: center; margin-top: 20px;">
@@ -158,6 +157,7 @@ document.querySelector('#app').innerHTML = `
         </div>
       </div>
       
+      <p id="victory-cypher" style="font-size: 1.5rem; font-family: monospace; letter-spacing: 4px; color: #333; margin: 15px auto; font-weight: bold; background: #eee; padding: 10px; border-radius: 10px; border: 2px dashed #ccc; width: fit-content;"></p>
     </div>
   </div>
 `;
@@ -388,7 +388,7 @@ async function run() {
         const bestTimeStr = document.getElementById('best-timer').innerText || "00:00.0";
         const grid = Array(5).fill("").map(() => Math.random() > 0.3 ? "🟩" : "🥬").join("");
         
-        const text = `Go Rabbit 🐇 Map: ${currentDiff.toUpperCase()} | Best: ${bestTimeStr}\n${grid}`;
+        const text = `Go Rabbit 🐇 Map: ${currentDiff.toUpperCase()} | Best: ${bestTimeStr}\n${grid}\n\nPlay free at https://go-rabbit-4af82.web.app`;
         if (navigator.share) {
             navigator.share({ title: 'Go Rabbit', text }).then(() => {
                 bingeSetsCount++;
