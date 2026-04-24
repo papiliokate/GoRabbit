@@ -160,6 +160,16 @@ document.querySelector('#app').innerHTML = `
       <p id="victory-cypher" style="font-size: 1.5rem; font-family: monospace; letter-spacing: 4px; color: #333; margin: 15px auto; font-weight: bold; background: #eee; padding: 10px; border-radius: 10px; border: 2px dashed #ccc; width: fit-content;"></p>
     </div>
   </div>
+  <div id="ios-install-modal" class="modal" style="display: none;">
+    <div class="modal-content victory-content">
+      <h2 style="color: #4CAF50; margin-bottom: 15px;">Free Binge Sets!</h2>
+      <p style="font-size: 1.2rem; line-height: 1.5; margin-bottom: 20px;">
+        Apple doesn't let us install apps automatically. 😢<br><br>
+        But if you tap the <strong>Share</strong> icon below, and then <strong>Add to Home Screen</strong>, we'll give you a free Binge Set when you open the app!
+      </p>
+      <button onclick="document.getElementById('ios-install-modal').style.display='none'" style="padding: 12px 20px; font-size: 16px; background-color: #38bdf8; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; width: 100%;">Got it!</button>
+    </div>
+  </div>
 `;
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -210,6 +220,21 @@ const game = new GameMode(boardEl, statusEl, inventoryEl, timerEl, bestTimerEl);
 
 window.currentMapIndex = 0;
 let bingeSetsCount = parseInt(localStorage.getItem("bingeSetsCount") || "0");
+
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+if (isStandalone && !localStorage.getItem('pwaBountyClaimed')) {
+    localStorage.setItem('pwaBountyClaimed', 'true');
+    bingeSetsCount += 1;
+    localStorage.setItem('bingeSetsCount', bingeSetsCount);
+    setTimeout(() => {
+        const statusEl = document.getElementById('status');
+        if (statusEl) {
+            const oldStatus = statusEl.textContent;
+            statusEl.textContent = "Bounty Claimed: +1 Binge Set!";
+            setTimeout(() => statusEl.textContent = oldStatus, 3000);
+        }
+    }, 1000);
+}
 
 function updateBingeUI() {
     const btn = document.getElementById("btn-binge-play");
@@ -370,16 +395,21 @@ async function run() {
     });
 
     document.getElementById("btn-remind-tomorrow").addEventListener("click", () => {
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') {
-                    console.log('User accepted the install prompt');
-                }
-                deferredPrompt = null;
-            });
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS) {
+            document.getElementById('ios-install-modal').style.display = 'flex';
         } else {
-            alert("Added to device!");
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            } else {
+                alert("Added to device!");
+            }
         }
     });
 
