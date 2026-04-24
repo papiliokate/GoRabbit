@@ -441,7 +441,7 @@ async function run() {
         if (analytics) {
             logEvent(analytics, 'binge_presale_click');
         }
-        window.location.href = '/presale.html';
+        window.location.href = 'https://oops-games-hub.web.app/presale.html';
     });
     
     // TEST HARNESS HOOKS
