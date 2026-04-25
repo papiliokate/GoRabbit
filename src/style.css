@@ -24,6 +24,7 @@ body {
   align-items: flex-start;
   min-height: 100vh;
   overflow: auto;
+  overscroll-behavior-y: auto;
 }
 
 #game-container {
@@ -407,13 +408,21 @@ button:hover, button.active {
   #status { font-size: 1rem; height: 20px; }
 }
 @media (max-width: 768px) {
-  :root { --board-padding: 10px; }
+  :root { 
+    --board-padding: 10px; 
+    --cell-size: 40px;
+    --sprite-size: 28px;
+  }
   .entity-sprite {
     transform: scale(1.1) var(--facing, scaleX(1));
   }
 }
 @media (max-width: 480px) {
-  :root { --board-padding: 8px; }
+  :root { 
+    --board-padding: 8px; 
+    --cell-size: 30px;
+    --sprite-size: 22px;
+  }
   #game-container { padding: 8px; gap: 8px; border-width: 4px; }
   h1 { font-size: 1.4rem; }
   button { padding: 6px 10px; font-size: 0.8rem; }

@@ -167,7 +167,7 @@ document.querySelector('#app').innerHTML = `
         Apple doesn't let us install apps automatically. 😢<br><br>
         But if you tap the <strong>Share</strong> icon below, and then <strong>Add to Home Screen</strong>, we'll give you a free Binge Set when you open the app!
       </p>
-      <button onclick="document.getElementById('ios-install-modal').style.display='none'" style="padding: 12px 20px; font-size: 16px; background-color: #38bdf8; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; width: 100%;">Got it!</button>
+      <button id="btn-close-ios-modal" style="padding: 12px 20px; font-size: 16px; background-color: #38bdf8; border: none; border-radius: 8px; color: white; cursor: pointer; font-weight: bold; width: 100%;">Got it!</button>
     </div>
   </div>
 `;
@@ -411,6 +411,10 @@ async function run() {
                 alert("Added to device!");
             }
         }
+    });
+
+    document.getElementById("btn-close-ios-modal").addEventListener("click", () => {
+        document.getElementById('ios-install-modal').style.display = 'none';
     });
 
     document.getElementById("btn-share-free").addEventListener("click", () => {
