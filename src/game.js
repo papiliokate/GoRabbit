@@ -458,8 +458,17 @@ export class GameMode {
         
         const regActions = document.getElementById('victory-regular-actions');
         const grandActions = document.getElementById('victory-grand-actions');
+        const carouselActions = document.getElementById('victory-carousel-actions');
         
-        if (window.currentMapIndex >= 4) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const isCarousel = urlParams.get('carousel') === 'true';
+        
+        if (isCarousel) {
+            if (regActions) regActions.style.display = 'none';
+            if (grandActions) grandActions.style.display = 'none';
+            if (carouselActions) carouselActions.style.display = 'flex';
+            textEl.innerHTML = `<strong>Carousel Stage Complete!</strong><br/>You beat the map in ${this.state.moveCount} moves.`;
+        } else if (window.currentMapIndex >= 4) {
             if (regActions) regActions.style.display = 'none';
             if (grandActions) grandActions.style.display = 'flex';
             textEl.innerHTML = `<strong>Set Complete!</strong><br/>You beat all 5 maps.`;

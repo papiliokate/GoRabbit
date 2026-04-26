@@ -157,6 +157,13 @@ document.querySelector('#app').innerHTML = `
         </div>
       </div>
       
+      <!-- Carousel Actions -->
+      <div id="victory-carousel-actions" style="display: none; flex-direction: column; gap: 10px; align-items: center; margin-top: 20px;">
+        <button id="carousel-play-next" class="primary-btn" style="width: 100%;">Play the next game</button>
+        <button id="carousel-share" class="primary-btn" style="width: 100%; display: none;">Share for another ride on the Carousel</button>
+        <button id="carousel-binge" class="premium-btn" style="width: 100%; background: linear-gradient(135deg, #e91e63 0%, #ff6090 100%);">Binge this game</button>
+      </div>
+      
       <p id="victory-cypher" style="font-size: 1.5rem; font-family: monospace; letter-spacing: 4px; color: #333; margin: 15px auto; font-weight: bold; background: #eee; padding: 10px; border-radius: 10px; border: 2px dashed #ccc; width: fit-content;"></p>
     </div>
   </div>
@@ -174,6 +181,20 @@ document.querySelector('#app').innerHTML = `
 
 const urlParams = new URLSearchParams(window.location.search);
 const isTikTok = urlParams.get('tiktok') === 'true';
+const isCarousel = urlParams.get('carousel') === 'true';
+
+let playedGames = urlParams.get('played') ? urlParams.get('played').split(',').filter(Boolean) : [];
+const GAMES_LIST = [
+    { id: 'GR', url: 'https://go-rabbit-4af82.web.app' },
+    { id: 'SS', url: 'https://she-sells-sea-shells.web.app' },
+    { id: 'ST', url: 'https://smack-that-donkey.web.app' },
+    { id: 'OG', url: 'https://o-gox.web.app' }
+];
+const CURRENT_GAME_ID = 'GR';
+
+if (isCarousel && !playedGames.includes(CURRENT_GAME_ID)) {
+    playedGames.push(CURRENT_GAME_ID);
+}
 
 if (isTikTok) {
     document.body.classList.add('tiktok-mode');
@@ -369,7 +390,9 @@ async function run() {
     // Start with small by default
     const autoplayMode = urlParams.get('autoplay');
     let startDifficulty = urlParams.get('diff') || 'small';
-    if (['tutorial', 'small', 'medium', 'large', 'extra_large'].includes(autoplayMode)) {
+    if (isCarousel) {
+        startDifficulty = 'large';
+    } else if (['tutorial', 'small', 'medium', 'large', 'extra_large'].includes(autoplayMode)) {
         startDifficulty = autoplayMode;
     } else if (autoplayMode) {
         startDifficulty = 'small'; // Lock non-standard modes to small
@@ -393,6 +416,45 @@ async function run() {
         const currentDiff = game.difficulty || 'small';
         window.loadNextMapInSet(currentDiff);
     });
+
+    if (isCarousel) {
+        const playNextBtn = document.getElementById("carousel-play-next");
+        const shareBtn = document.getElementById("carousel-share");
+        
+        if (playedGames.length >= 4) {
+            playNextBtn.style.display = "none";
+            shareBtn.style.display = "block";
+        }
+
+        playNextBtn.addEventListener("click", () => {
+            const unplayed = GAMES_LIST.filter(g => !playedGames.includes(g.id));
+            if (unplayed.length > 0) {
+                const nextGame = unplayed[Math.floor(Math.random() * unplayed.length)];
+                window.location.href = `${nextGame.url}?carousel=true&played=${playedGames.join(',')}`;
+            }
+        });
+
+        document.getElementById("carousel-binge").addEventListener("click", () => {
+            if (analytics) logEvent(analytics, 'binge_presale_click');
+            window.location.href = 'https://oops-games-hub.web.app/presale.html';
+        });
+
+        shareBtn.addEventListener("click", () => {
+            const text = "I rode the carousel at oops-games.";
+            if (navigator.share) {
+                navigator.share({ title: 'Oops-Games Carousel', text }).then(() => {
+                    const nextGame = GAMES_LIST[Math.floor(Math.random() * GAMES_LIST.length)];
+                    window.location.href = `${nextGame.url}?carousel=true&played=`;
+                }).catch(e => console.warn(e));
+            } else {
+                navigator.clipboard.writeText(text).then(() => {
+                    alert("Copied to clipboard!");
+                    const nextGame = GAMES_LIST[Math.floor(Math.random() * GAMES_LIST.length)];
+                    window.location.href = `${nextGame.url}?carousel=true&played=`;
+                });
+            }
+        });
+    }
 
     document.getElementById("btn-remind-tomorrow").addEventListener("click", () => {
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
