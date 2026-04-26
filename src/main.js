@@ -87,8 +87,8 @@ document.querySelector('#app').innerHTML = `
           <button id="reset-btn">↻</button>
         </div>
         <div id="daily-countdown" style="display: flex; justify-content: space-between; align-items: center;">
-            <span id="countdown-text">Connecting to Time Service...</span>
             <button id="btn-binge-play" style="display: none; padding: 4px 10px; font-size: 0.9rem; background: linear-gradient(135deg, #e91e63 0%, #ff6090 100%); color: white; border-radius: 12px; border: 1px solid white;">🎟️ <span id="binge-count">0</span> Sets</button>
+            <button id="header-carousel-next" style="display: none; padding: 4px 10px; font-size: 0.9rem; background: linear-gradient(135deg, #00f0ff, #0055ff); color: white; border-radius: 12px; border: 1px solid white; font-weight: bold; cursor: pointer;">➡️ Next Game</button>
         </div>
       </div>
       <div id="hud-panel">
@@ -159,9 +159,9 @@ document.querySelector('#app').innerHTML = `
       
       <!-- Carousel Actions -->
       <div id="victory-carousel-actions" style="display: none; flex-direction: column; gap: 10px; align-items: center; margin-top: 20px;">
-        <button id="carousel-play-next" class="primary-btn" style="width: 100%;">Play the next game</button>
-        <button id="carousel-share" class="primary-btn" style="width: 100%; display: none;">Share for another ride on the Carousel</button>
-        <button id="carousel-binge" class="premium-btn" style="width: 100%; background: linear-gradient(135deg, #e91e63 0%, #ff6090 100%);">Binge this game</button>
+        <button id="carousel-play-next" class="primary-btn" style="width: 100%; background-color: var(--carousel-primary);">➡️ Play the next game</button>
+        <button id="carousel-share" class="primary-btn" style="width: 100%; display: none; background-color: var(--carousel-primary);">📤 Share for another ride</button>
+        <button id="carousel-binge" class="primary-btn" style="width: 100%; background-color: var(--carousel-secondary);">🎟️ Binge this game ($0.99)</button>
       </div>
       
       <p id="victory-cypher" style="font-size: 1.5rem; font-family: monospace; letter-spacing: 4px; color: #333; margin: 15px auto; font-weight: bold; background: #eee; padding: 10px; border-radius: 10px; border: 2px dashed #ccc; width: fit-content;"></p>
@@ -353,39 +353,8 @@ async function fetchDailyMaps() {
 }
 
 async function run() {
-    countdownEl.textContent = "Loading puzzles...";
     await TimeService.fetchTime();
     await fetchDailyMaps();
-
-    let nextCheckTime = 0;
-    setInterval(async () => {
-        if (TimeService.checkNeedRefresh()) {
-            const now = Date.now();
-            countdownEl.textContent = "Generating new puzzles... Stand by.";
-            if (now > nextCheckTime) {
-                try {
-                    const res = await fetch('/daily_maps.json?v=' + Date.now());
-                    if (res.ok) {
-                        const newData = await res.json();
-                        if (newData._date && newData._date === TimeService.getLiveUtcDateStr()) {
-                            countdownEl.textContent = "Loading new puzzles...";
-                            location.reload();
-                            return;
-                        }
-                    }
-                } catch (e) {}
-                nextCheckTime = now + 60000; // Poll every 60s
-            }
-        } else {
-            countdownEl.textContent = TimeService.getNextResetTimeStr();
-        }
-    }, 1000);
-
-    if (!TimeService.checkNeedRefresh()) {
-        countdownEl.textContent = TimeService.getNextResetTimeStr();
-    } else {
-        countdownEl.textContent = "Generating new puzzles... Stand by.";
-    }
 
     // Start with small by default
     const autoplayMode = urlParams.get('autoplay');
@@ -418,42 +387,65 @@ async function run() {
     });
 
     if (isCarousel) {
+        document.getElementById("header-carousel-next").style.display = "block";
         const playNextBtn = document.getElementById("carousel-play-next");
+        const headerNextBtn = document.getElementById("header-carousel-next");
         const shareBtn = document.getElementById("carousel-share");
         
         if (playedGames.length >= 4) {
             playNextBtn.style.display = "none";
+            headerNextBtn.style.display = "none";
             shareBtn.style.display = "block";
         }
 
-        playNextBtn.addEventListener("click", () => {
-            const unplayed = GAMES_LIST.filter(g => !playedGames.includes(g.id));
-            if (unplayed.length > 0) {
-                const nextGame = unplayed[Math.floor(Math.random() * unplayed.length)];
-                window.location.href = `${nextGame.url}?carousel=true&played=${playedGames.join(',')}`;
+        if (urlParams.get('mockPurchase') === 'true') {
+        let count = parseInt(localStorage.getItem('bingeSetsCount') || '0');
+        count += 5;
+        localStorage.setItem('bingeSetsCount', count);
+        if (typeof updateBingeUI === 'function') updateBingeUI();
+        
+        const newUrl = window.location.href.replace(/([&?])mockPurchase=true&?/, '$1').replace(/&$/, '').replace(/\?$/, '');
+        window.history.replaceState({}, '', newUrl);
+        setTimeout(() => alert('Mock Purchase Successful! Added 5 Binge Tokens.'), 100);
+    }
+
+    const advanceCarousel = async () => {
+            try {
+                const res = await fetch('https://oops-games-hub.web.app/carousel_config.json');
+                const configList = await res.json();
+                const unplayed = configList.filter(g => !playedGames.includes(g.id));
+                if (unplayed.length > 0) {
+                    const nextGame = unplayed[Math.floor(Math.random() * unplayed.length)];
+                    window.location.href = `${nextGame.url}?carousel=true&played=${playedGames.join(',')}`;
+                } else {
+                    window.location.href = 'https://oops-games-hub.web.app/';
+                }
+            } catch(e) {
+                console.error("Failed to load carousel config", e);
+                window.location.href = 'https://oops-games-hub.web.app/';
             }
-        });
+        };
+
+        playNextBtn.addEventListener("click", advanceCarousel);
+        headerNextBtn.addEventListener("click", advanceCarousel);
 
         document.getElementById("carousel-binge").addEventListener("click", () => {
             if (analytics) logEvent(analytics, 'binge_presale_click');
-            window.location.href = 'https://oops-games-hub.web.app/presale.html';
+            window.location.href = 'https://oops-games-hub.web.app/presale.html?carousel=true&played=' + playedGames.join(',') + '&returnUrl=' + encodeURIComponent(window.location.href);
         });
 
-        shareBtn.addEventListener("click", () => {
+        shareBtn.addEventListener("click", async () => {
             const text = "I rode the carousel at oops-games.";
             if (navigator.share) {
-                navigator.share({ title: 'Oops-Games Carousel', text }).then(() => {
-                    const nextGame = GAMES_LIST[Math.floor(Math.random() * GAMES_LIST.length)];
-                    window.location.href = `${nextGame.url}?carousel=true&played=`;
-                }).catch(e => console.warn(e));
+                try {
+                    await navigator.share({ title: 'Oops-Games Carousel', text });
+                    await advanceCarousel();
+                } catch(e) { console.warn(e); }
             } else {
-                navigator.clipboard.writeText(text).then(() => {
-                    alert("Copied to clipboard!");
-                    const nextGame = GAMES_LIST[Math.floor(Math.random() * GAMES_LIST.length)];
-                    window.location.href = `${nextGame.url}?carousel=true&played=`;
-                });
+                navigator.clipboard.writeText(text).then(advanceCarousel);
             }
         });
+
     }
 
     document.getElementById("btn-remind-tomorrow").addEventListener("click", () => {
