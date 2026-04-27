@@ -195,6 +195,9 @@ const CURRENT_GAME_ID = 'GR';
 if (isCarousel && !playedGames.includes(CURRENT_GAME_ID)) {
     playedGames.push(CURRENT_GAME_ID);
 }
+if (isCarousel && typeof analytics !== 'undefined' && analytics) {
+    logEvent(analytics, 'carousel_visit', { game_id: CURRENT_GAME_ID });
+}
 
 if (isTikTok) {
     document.body.classList.add('tiktok-mode');
