@@ -459,22 +459,36 @@ export class GameMode {
         const regActions = document.getElementById('victory-regular-actions');
         const grandActions = document.getElementById('victory-grand-actions');
         const carouselActions = document.getElementById('victory-carousel-actions');
+        const embedActions = document.getElementById('victory-embed-actions');
         
         const urlParams = new URLSearchParams(window.location.search);
         const isCarousel = urlParams.get('carousel') === 'true';
+        const isEmbed = urlParams.get('mode') === 'embed';
         
-        if (isCarousel) {
+        if (isEmbed) {
             if (regActions) regActions.style.display = 'none';
             if (grandActions) grandActions.style.display = 'none';
+            if (carouselActions) carouselActions.style.display = 'none';
+            if (embedActions) embedActions.style.display = 'flex';
+            if (cypherEl) cypherEl.style.display = 'none';
+            textEl.innerHTML = `<strong>Level 1 Complete!</strong><br/>You survived.`;
+        } else if (isCarousel) {
+            if (regActions) regActions.style.display = 'none';
+            if (grandActions) grandActions.style.display = 'none';
+            if (embedActions) embedActions.style.display = 'none';
             if (carouselActions) carouselActions.style.display = 'flex';
             textEl.innerHTML = `<strong>Carousel Stage Complete!</strong><br/>You beat the map in ${this.state.moveCount} moves.`;
         } else if (window.currentMapIndex >= 4) {
             if (regActions) regActions.style.display = 'none';
+            if (carouselActions) carouselActions.style.display = 'none';
+            if (embedActions) embedActions.style.display = 'none';
             if (grandActions) grandActions.style.display = 'flex';
             textEl.innerHTML = `<strong>Set Complete!</strong><br/>You beat all 5 maps.`;
         } else {
-            if (regActions) regActions.style.display = 'flex';
             if (grandActions) grandActions.style.display = 'none';
+            if (carouselActions) carouselActions.style.display = 'none';
+            if (embedActions) embedActions.style.display = 'none';
+            if (regActions) regActions.style.display = 'flex';
         }
         
         if (hudShareBtn) {

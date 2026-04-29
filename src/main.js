@@ -163,6 +163,12 @@ document.querySelector('#app').innerHTML = `
         <button id="carousel-share" class="primary-btn" style="width: 100%; display: none; background-color: var(--carousel-primary);">📤 Share for another ride</button>
         <button id="carousel-binge" class="primary-btn" style="width: 100%; background-color: var(--carousel-secondary);">🎟️ Binge this game ($0.99)</button>
       </div>
+
+      <!-- Embed Actions -->
+      <div id="victory-embed-actions" style="display: none; flex-direction: column; gap: 10px; align-items: center; margin-top: 20px;">
+        <p style="font-size: 1.2rem; margin-bottom: 10px; color: #333; font-weight: 600;">You survived Level 1! Only 4% of players beat Level 2.</p>
+        <button id="btn-embed-hook" class="primary-btn" style="background: #e91e63; color: white; width: 100%; font-size: 1.3rem; padding: 15px;">🚀 Play Full Game on Oops-Games</button>
+      </div>
       
       <p id="victory-cypher" style="font-size: 1.5rem; font-family: monospace; letter-spacing: 4px; color: #333; margin: 15px auto; font-weight: bold; background: #eee; padding: 10px; border-radius: 10px; border: 2px dashed #ccc; width: fit-content;"></p>
     </div>
@@ -361,8 +367,10 @@ async function run() {
 
     // Start with small by default
     const autoplayMode = urlParams.get('autoplay');
+    const isEmbed = urlParams.get('mode') === 'embed';
+    if (isEmbed && analytics) logEvent(analytics, 'embed_visit');
     let startDifficulty = urlParams.get('diff') || 'small';
-    if (isCarousel) {
+    if (isCarousel || isEmbed) {
         startDifficulty = 'large';
     } else if (['tutorial', 'small', 'medium', 'large', 'extra_large'].includes(autoplayMode)) {
         startDifficulty = autoplayMode;
@@ -514,6 +522,11 @@ async function run() {
             logEvent(analytics, 'binge_presale_click');
         }
         window.location.href = 'https://oops-games-hub.web.app/presale.html';
+    });
+
+    document.getElementById('btn-embed-hook')?.addEventListener('click', () => {
+        if (analytics) logEvent(analytics, 'embed_hook_clicked');
+        window.open('https://oops-games-hub.web.app/', '_blank');
     });
     
     // TEST HARNESS HOOKS
