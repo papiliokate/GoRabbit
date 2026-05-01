@@ -346,7 +346,7 @@ window.dailyMaps = null;
 
 async function fetchDailyMaps() {
     try {
-        const res = await fetch('/daily_maps.json?v=' + Date.now());
+        const res = await fetch(import.meta.env.BASE_URL + 'daily_maps.json?v=' + Date.now());
         if (res.ok) {
             window.dailyMaps = await res.json();
             console.log("Loaded daily maps from server.");
