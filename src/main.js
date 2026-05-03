@@ -73,6 +73,50 @@ window.addEventListener('beforeinstallprompt', (e) => {
     deferredPrompt = e;
 });
 
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('autoplay') === 'split') {
+    const asmrFile = urlParams.get('asmr');
+    if (asmrFile) {
+        const vid = document.createElement('video');
+        vid.src = `/asmr/${asmrFile}`;
+        vid.autoplay = true;
+        vid.loop = true;
+        vid.muted = true;
+        vid.style.position = 'absolute';
+        vid.style.bottom = '0';
+        vid.style.left = '0';
+        vid.style.width = '100%';
+        vid.style.height = '50vh';
+        vid.style.objectFit = 'cover';
+        document.body.appendChild(vid);
+    }
+    
+    const banner = document.createElement('div');
+    banner.innerText = "Go Rabbit from Oops-games";
+    banner.style.position = 'absolute';
+    banner.style.top = '50%';
+    banner.style.left = '50%';
+    banner.style.transform = 'translate(-50%, -50%)';
+    banner.style.background = 'rgba(0, 0, 0, 0.85)';
+    banner.style.color = '#fde047';
+    banner.style.padding = '12px 24px';
+    banner.style.borderRadius = '12px';
+    banner.style.border = '2px solid #b45309';
+    banner.style.fontFamily = 'system-ui, -apple-system, sans-serif';
+    banner.style.fontWeight = '800';
+    banner.style.fontSize = '28px';
+    banner.style.zIndex = '1000';
+    banner.style.whiteSpace = 'nowrap';
+    banner.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
+    banner.style.textShadow = '1px 1px 2px rgba(0,0,0,0.8)';
+    document.body.appendChild(banner);
+    
+    // Inject style to squeeze app into top half
+    const style = document.createElement('style');
+    style.innerHTML = '#app { height: 50vh !important; }';
+    document.head.appendChild(style);
+}
+
 document.querySelector('#app').innerHTML = `
   <div id="game-container">
     <header id="game-header">
@@ -185,7 +229,6 @@ document.querySelector('#app').innerHTML = `
   </div>
 `;
 
-const urlParams = new URLSearchParams(window.location.search);
 const isTikTok = urlParams.get('tiktok') === 'true';
 const isCarousel = urlParams.get('carousel') === 'true';
 
@@ -606,15 +649,18 @@ async function run() {
                 game.processNextAction = function() {
                   if (this.actionQueue && this.actionQueue.length > 0 && !this.state.gameOver && !this.state.win) {
                       const nextAction = this.actionQueue.shift();
+                      let delay = phase === 'recovery' ? 80 : 130;
+                      if (autoplayMode === 'split') delay = 40;
                       setTimeout(() => {
                          this.applyAction(nextAction);
-                      }, phase === 'recovery' ? 80 : 130);
+                      }, delay);
                   } else if (this.state.win) {
                       window._GAME_WON = true;
                       // Explicit hold for video ending capture
                       if (!window._VIDEO_RECORDING_DONE_TIMEOUT_SET) {
                           window._VIDEO_RECORDING_DONE_TIMEOUT_SET = true;
-                          setTimeout(() => window._VIDEO_RECORDING_DONE = true, 4000);
+                          let waitTime = autoplayMode === 'split' ? 500 : 4000;
+                          setTimeout(() => window._VIDEO_RECORDING_DONE = true, waitTime);
                       }
                   } else if (phase === 'failing' && this.actionQueue.length === 0) {
                       // We finished the bad path. Force game over visually.
