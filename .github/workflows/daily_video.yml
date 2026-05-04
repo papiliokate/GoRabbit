@@ -33,8 +33,7 @@ jobs:
       - name: Install Node Dependencies
         run: npm ci || npm install
 
-      - name: Install Puppeteer System Libraries
-        run: npx puppeteer browsers install chrome
+
 
       - name: Generate Video
         run: xvfb-run --auto-servernum --server-args="-screen 0 720x1280x24" node scripts/generate_video.js
