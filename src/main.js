@@ -65,6 +65,13 @@ if (import.meta.env.VITE_FIREBASE_API_KEY) {
   }
 }
 
+let publisherDomain = 'unknown';
+if (document.referrer) {
+    try {
+        publisherDomain = new URL(document.referrer).hostname;
+    } catch(e) {}
+}
+
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
     // Prevent the mini-infobar from appearing on mobile
@@ -411,7 +418,7 @@ async function run() {
     // Start with small by default
     const autoplayMode = urlParams.get('autoplay');
     const isEmbed = urlParams.get('mode') === 'embed';
-    if (isEmbed && analytics) logEvent(analytics, 'embed_visit');
+    if (isEmbed && analytics) logEvent(analytics, 'embed_visit', { publisher_domain: publisherDomain });
     let startDifficulty = urlParams.get('diff') || 'small';
     if (isCarousel || isEmbed) {
         startDifficulty = 'large';
@@ -656,6 +663,11 @@ async function run() {
                       }, delay);
                   } else if (this.state.win) {
                       window._GAME_WON = true;
+                      if (analytics) {
+                          let eventParams = {};
+                          if (urlParams.get('mode') === 'embed') eventParams.publisher_domain = publisherDomain;
+                          logEvent(analytics, 'level_complete', eventParams);
+                      }
                       // Explicit hold for video ending capture
                       if (!window._VIDEO_RECORDING_DONE_TIMEOUT_SET) {
                           window._VIDEO_RECORDING_DONE_TIMEOUT_SET = true;
