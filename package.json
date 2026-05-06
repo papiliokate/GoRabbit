@@ -1,27 +1,27 @@
 {
-  "name": "gorabbit",
-  "version": "0.0.0",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "deploy": "vite build && firebase deploy",
-    "generate-maps": "node apply_daily_maps.js",
-    "generate-video": "node scripts/generate_video.js"
-  },
-  "devDependencies": {
-    "@ffmpeg-installer/ffmpeg": "^1.1.0",
-    "fluent-ffmpeg": "^2.1.3",
-    "google-tts-api": "^2.0.2",
-    "puppeteer": "^24.40.0",
-    "puppeteer-screen-recorder": "^3.0.3",
-    "vite": "^8.0.4"
-  },
-  "overrides": {
-    "puppeteer-screen-recorder": {
-      "puppeteer": "$puppeteer"
-    }
-  }
+    "name":  "gorabbit",
+    "version":  "0.0.0",
+    "private":  true,
+    "type":  "module",
+    "scripts":  {
+                    "dev":  "vite",
+                    "build":  "vite build",
+                    "preview":  "vite preview",
+                    "deploy":  "node ../StudioHub/deploy_ecosystem.js",
+                    "generate-maps":  "node apply_daily_maps.js",
+                    "generate-video":  "node scripts/generate_video.js"
+                },
+    "devDependencies":  {
+                            "@ffmpeg-installer/ffmpeg":  "^1.1.0",
+                            "fluent-ffmpeg":  "^2.1.3",
+                            "google-tts-api":  "^2.0.2",
+                            "puppeteer":  "^24.40.0",
+                            "puppeteer-screen-recorder":  "^3.0.3",
+                            "vite":  "^8.0.4"
+                        },
+    "overrides":  {
+                      "puppeteer-screen-recorder":  {
+                                                        "puppeteer":  "$puppeteer"
+                                                    }
+                  }
 }

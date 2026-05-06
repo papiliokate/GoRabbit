@@ -192,7 +192,7 @@ document.querySelector('#app').innerHTML = `
         <button id="victory-next" class="primary-btn" style="width: 100%;">Next Map</button>
         <div class="cross-promo" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px; width: 100%; text-align: center;">
             <p style="margin-bottom: 10px;">Play a different game</p>
-            <a href="https://oops-games-hub.web.app" class="promo-btn" style="display: block; padding: 10px; background: #9c27b0; color: white; border-radius: 10px; text-decoration: none;">🎮 Go to Games Hub</a>
+            <a href="https://oops-games.com" class="promo-btn" style="display: block; padding: 10px; background: #9c27b0; color: white; border-radius: 10px; text-decoration: none;">🎮 Go to Games Hub</a>
         </div>
       </div>
       
@@ -204,7 +204,7 @@ document.querySelector('#app').innerHTML = `
         
         <div class="cross-promo" style="margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px; width: 100%; text-align: center;">
             <p style="margin-bottom: 10px;">Play a different game</p>
-            <a href="https://oops-games-hub.web.app" class="promo-btn" style="display: block; padding: 10px; background: #9c27b0; color: white; border-radius: 10px; text-decoration: none;">🎮 Go to Games Hub</a>
+            <a href="https://oops-games.com" class="promo-btn" style="display: block; padding: 10px; background: #9c27b0; color: white; border-radius: 10px; text-decoration: none;">🎮 Go to Games Hub</a>
         </div>
       </div>
       
@@ -453,7 +453,7 @@ async function run() {
         const headerNextBtn = document.getElementById("header-carousel-next");
         const shareBtn = document.getElementById("carousel-share");
         
-        fetch('https://oops-games-hub.web.app/carousel_config.json')
+        fetch('https://oops-games.com/carousel_config.json')
             .then(res => res.json())
             .then(configList => {
                 if (playedGames.length >= configList.length) {
@@ -475,7 +475,7 @@ async function run() {
 
     const advanceCarousel = async (isAnotherRide = false) => {
             try {
-                const res = await fetch('https://oops-games-hub.web.app/carousel_config.json');
+                const res = await fetch('https://oops-games.com/carousel_config.json');
                 const configList = await res.json();
                 
                 let currentPlayed = urlParams.get('played') ? urlParams.get('played').split(',').filter(Boolean) : [];
@@ -490,11 +490,11 @@ async function run() {
                     const nextGame = unplayed[Math.floor(Math.random() * unplayed.length)];
                     window.location.href = `${nextGame.url}?carousel=true&played=${currentPlayed.join(',')}`;
                 } else {
-                    window.location.href = 'https://oops-games-hub.web.app/';
+                    window.location.href = 'https://oops-games.com/';
                 }
             } catch(e) {
                 console.error("Failed to load carousel config", e);
-                window.location.href = 'https://oops-games-hub.web.app/';
+                window.location.href = 'https://oops-games.com/';
             }
         };
 
@@ -503,7 +503,7 @@ async function run() {
 
         document.getElementById("carousel-binge").addEventListener("click", () => {
             if (analytics) logEvent(analytics, 'binge_presale_click');
-            window.location.href = 'https://oops-games-hub.web.app/presale.html?carousel=true&played=' + playedGames.join(',') + '&returnUrl=' + encodeURIComponent(window.location.href);
+            window.location.href = 'https://oops-games.com/presale.html?carousel=true&played=' + playedGames.join(',') + '&returnUrl=' + encodeURIComponent(window.location.href);
         });
 
         shareBtn.addEventListener("click", async () => {
@@ -571,12 +571,12 @@ async function run() {
         if (analytics) {
             logEvent(analytics, 'binge_presale_click');
         }
-        window.location.href = 'https://oops-games-hub.web.app/presale.html';
+        window.location.href = 'https://oops-games.com/presale.html';
     });
 
     document.getElementById('btn-embed-hook')?.addEventListener('click', () => {
         if (analytics) logEvent(analytics, 'embed_hook_clicked');
-        window.open('https://oops-games-hub.web.app/', '_blank');
+        window.open('https://oops-games.com/', '_blank');
     });
     
     // TEST HARNESS HOOKS
