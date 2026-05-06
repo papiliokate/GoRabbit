@@ -37,6 +37,8 @@ jobs:
 
       - name: Generate Video
         run: xvfb-run --auto-servernum --server-args="-screen 0 720x1280x24" node scripts/generate_video.js
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
 
       - name: Build Application
         run: npm run build
@@ -65,3 +67,4 @@ jobs:
           curl --fail --silent --show-error -X POST -H "Content-Type: application/json" \
           -d "{\"video_url\": \"https://go-rabbit-4af82.web.app/daily_video.mp4?t=$TS\", \"text\": \"$CAPTION\", \"youtube_title\": \"$YT_TITLE\", \"target_channel\": \"all\"}" \
           https://hooks.zapier.com/hooks/catch/27231889/ujm5mjh/ || exit 1
+
