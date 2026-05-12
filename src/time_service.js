@@ -6,7 +6,10 @@ export class TimeService {
     static async fetchTime() {
         try {
             // Fetch current UTC time from a reliable external API
-            const response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC', { cache: 'no-store' });
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 1500);
+            const response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC', { cache: 'no-store', signal: controller.signal });
+            clearTimeout(timeoutId);
             if (!response.ok) throw new Error('Network response was not ok');
             const data = await response.json();
             

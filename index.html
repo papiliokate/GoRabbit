@@ -6,11 +6,19 @@
     <link rel="manifest" href="/manifest.json" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Go Rabbit - Daily Forest Puzzle Game | Oops-Games</title>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('mode') === 'captcha' || params.get('mode') === 'embed' || params.get('client_id')) {
+        window.location.replace('./conversion.html' + window.location.search);
+    }
+  </script>
+
     <meta name="description" content="Hop to the highest score in Go Rabbit! A fun, endless runner game. Play for free right now on Oops-Games." />
   </head>
   <body>
     <div id="app"></div>
     <script src="/streak_manager.js"></script>
     <script type="module" src="/src/main.js"></script>
-  </body>
+    <script src="/carousel_manager.js"></script>
+</body>
 </html>
