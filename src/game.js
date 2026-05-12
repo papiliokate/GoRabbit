@@ -2,7 +2,7 @@ import { Engine, DIRS } from './engine.js';
 import { Solver } from './solver.js';
 import { Generator } from './generator.js';
 import { tutorialMap, getTutorialTriggers } from './tutorial_map.js';
-import { TimeService } from './time_service.js';
+const TimeService = { currentUtcDateStr: new Date().toISOString().split('T')[0], fetchTime: async () => {} };
 // SVGs replaced with AI generated textures
 
 export class GameMode {
@@ -462,7 +462,7 @@ export class GameMode {
         const embedActions = document.getElementById('victory-embed-actions');
         
         const urlParams = new URLSearchParams(window.location.search);
-        const isCarousel = urlParams.get('carousel') === 'true';
+        const isCarousel = false;
         const isEmbed = urlParams.get('mode') === 'embed';
         
         if (isEmbed) {

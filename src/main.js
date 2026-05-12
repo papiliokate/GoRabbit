@@ -1,6 +1,6 @@
 import './style.css';
 import { GameMode } from './game.js';
-import { TimeService } from './time_service.js';
+const TimeService = { currentUtcDateStr: new Date().toISOString().split('T')[0], fetchTime: async () => {} };
 import { Random } from './random.js';
 import { Solver } from './solver.js';
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
@@ -233,7 +233,7 @@ document.querySelector('#app').innerHTML = `
 `;
 
 const isTikTok = urlParams.get('tiktok') === 'true';
-const isCarousel = urlParams.get('carousel') === 'true';
+const isCarousel = false;
 
 let playedGames = urlParams.get('played') ? urlParams.get('played').split(',').filter(Boolean) : [];
 const GAMES_LIST = [
@@ -492,15 +492,15 @@ async function run() {
             }
         };
 
-        playNextBtn.addEventListener("click", () => advanceCarousel(false));
-        headerNextBtn.addEventListener("click", () => advanceCarousel(false));
+        playNextBtn?.addEventListener("click", () => advanceCarousel(false));
+        headerNextBtn?.addEventListener("click", () => advanceCarousel(false));
 
         document.getElementById("carousel-binge").addEventListener("click", () => {
             if (analytics) logEvent(analytics, 'binge_presale_click');
             window.location.href = 'https://oops-games.com/presale.html?carousel=true&played=' + playedGames.join(',') + '&returnUrl=' + encodeURIComponent(window.location.href);
         });
 
-        shareBtn.addEventListener("click", async () => {
+        shareBtn?.addEventListener("click", async () => {
             const text = "I rode the carousel at oops-games.";
             if (navigator.share) {
                 try {
