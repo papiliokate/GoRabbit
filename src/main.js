@@ -3,7 +3,8 @@ import { GameMode } from './game.js';
 import { TimeService } from './time_service.js';
 import { Random } from './random.js';
 import { Solver } from './solver.js';
-import { initializeApp, getAnalytics, logEvent } from "./analytics_wrapper.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-analytics.js";
 
 let analytics; // Declare analytics outside try so it can be used later
 
@@ -59,7 +60,6 @@ if (import.meta.env.VITE_FIREBASE_API_KEY) {
     };
     const app = initializeApp(firebaseConfig);
     analytics = getAnalytics(app);
-    logEvent(analytics, 'custom_session_start');
   } catch (e) {
     console.warn("Analytics error:", e);
   }
@@ -139,7 +139,7 @@ document.querySelector('#app').innerHTML = `
         </div>
         <div id="daily-countdown" style="display: flex; justify-content: space-between; align-items: center;">
             <button id="btn-binge-play" style="display: none; padding: 4px 10px; font-size: 0.9rem; background: linear-gradient(135deg, #e91e63 0%, #ff6090 100%); color: white; border-radius: 12px; border: 1px solid white;">🎟️ <span id="binge-count">0</span> Sets</button>
-            <button id="header-carousel-next" style="pointer-events: auto !important; display: none; padding: 4px 10px; font-size: 0.9rem; background: linear-gradient(135deg, #00f0ff, #0055ff); color: white; border-radius: 12px; border: 1px solid white; font-weight: bold; cursor: pointer;">➡️ Next Game</button>
+            <button id="header-carousel-next" style="display: none; padding: 4px 10px; font-size: 0.9rem; background: linear-gradient(135deg, #00f0ff, #0055ff); color: white; border-radius: 12px; border: 1px solid white; font-weight: bold; cursor: pointer;">➡️ Next Game</button>
         </div>
       </div>
       <div id="hud-panel">
@@ -417,7 +417,7 @@ async function run() {
 
     // Start with small by default
     const autoplayMode = urlParams.get('autoplay');
-    const isEmbed = false;
+    const isEmbed = urlParams.get('mode') === 'embed';
     if (isEmbed && analytics) logEvent(analytics, 'embed_visit', { publisher_domain: publisherDomain });
     let startDifficulty = urlParams.get('diff') || 'small';
     if (isCarousel || isEmbed) {
@@ -453,7 +453,14 @@ async function run() {
         const headerNextBtn = document.getElementById("header-carousel-next");
         const shareBtn = document.getElementById("carousel-share");
         
-        
+        fetch('https://oops-games.com/carousel_config.json')
+            .then(res => res.json())
+            .then(configList => {
+                if (playedGames.length >= configList.length) {
+                    if (playNextBtn) playNextBtn.style.display = "none";
+                    if (shareBtn) shareBtn.style.display = "block";
+                }
+            }).catch(console.warn);
 
         if (urlParams.get('mockPurchase') === 'true') {
         let count = parseInt(localStorage.getItem('bingeSetsCount') || '0');
@@ -468,16 +475,8 @@ async function run() {
 
     const advanceCarousel = async (isAnotherRide = false) => {
             try {
-                const configList = [
-                { "id": "GR", "url": "/go-rabbit" },
-                { "id": "SS", "url": "/she-sells-sea-shells" },
-                { "id": "ST", "url": "/smack-that-donkey" },
-                { "id": "OG", "url": "/o-gox" },
-                { "id": "BB", "url": "/budbud" },
-                { "id": "LW", "url": "/lightning-words" },
-                { "id": "NIM", "url": "/nomisekili" },
-                { "id": "SDM", "url": "/sunny-day-maze" }
-            ];
+                const res = await fetch('https://oops-games.com/carousel_config.json');
+                const configList = await res.json();
                 
                 let currentPlayed = urlParams.get('played') ? urlParams.get('played').split(',').filter(Boolean) : [];
                 if (!currentPlayed.includes('GR')) currentPlayed.push('GR');
@@ -499,8 +498,8 @@ async function run() {
             }
         };
 
-
-
+        playNextBtn.addEventListener("click", () => advanceCarousel(false));
+        headerNextBtn.addEventListener("click", () => advanceCarousel(false));
 
         document.getElementById("carousel-binge").addEventListener("click", () => {
             if (analytics) logEvent(analytics, 'binge_presale_click');
