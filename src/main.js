@@ -376,7 +376,7 @@ window.consumeBingeSetAndPlay = function(diff) {
     }
 };
 
-document.getElementById("btn-binge-play").addEventListener("click", () => {
+document.getElementById("btn-binge-play")?.addEventListener("click", () => {
     const activeBtn = document.querySelector('.diff-btn.active');
     if (!activeBtn) return;
     window.consumeBingeSetAndPlay(activeBtn.dataset.diff);
@@ -435,7 +435,7 @@ async function run() {
     }
     game.init(startDifficulty);
 
-    document.getElementById("victory-next").addEventListener("click", () => {
+    document.getElementById("victory-next")?.addEventListener("click", () => {
         document.getElementById("victory-modal").style.display = "none";
         const currentDiff = game.difficulty || 'small';
         window.loadNextMapInSet(currentDiff);
@@ -495,7 +495,7 @@ async function run() {
         playNextBtn?.addEventListener("click", () => advanceCarousel(false));
         headerNextBtn?.addEventListener("click", () => advanceCarousel(false));
 
-        document.getElementById("carousel-binge").addEventListener("click", () => {
+        document.getElementById("carousel-binge")?.addEventListener("click", () => {
             if (analytics) logEvent(analytics, 'binge_presale_click');
             window.location.href = 'https://oops-games.com/presale.html?carousel=true&played=' + playedGames.join(',') + '&returnUrl=' + encodeURIComponent(window.location.href);
         });
@@ -514,7 +514,7 @@ async function run() {
 
     }
 
-    document.getElementById("btn-remind-tomorrow").addEventListener("click", () => {
+    document.getElementById("btn-remind-tomorrow")?.addEventListener("click", () => {
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         if (isIOS) {
             document.getElementById('ios-install-modal').style.display = 'flex';
@@ -533,11 +533,11 @@ async function run() {
         }
     });
 
-    document.getElementById("btn-close-ios-modal").addEventListener("click", () => {
+    document.getElementById("btn-close-ios-modal")?.addEventListener("click", () => {
         document.getElementById('ios-install-modal').style.display = 'none';
     });
 
-    document.getElementById("btn-share-free").addEventListener("click", () => {
+    document.getElementById("btn-share-free")?.addEventListener("click", () => {
         const currentDiff = game.difficulty || 'small';
         const bestTimeStr = document.getElementById('best-timer').innerText || "00:00.0";
         const grid = Array(5).fill("").map(() => Math.random() > 0.3 ? "🟩" : "🥬").join("");
@@ -561,7 +561,7 @@ async function run() {
         }
     });
 
-    document.getElementById("btn-buy-binge").addEventListener("click", () => {
+    document.getElementById("btn-buy-binge")?.addEventListener("click", () => {
         if (analytics) {
             logEvent(analytics, 'binge_presale_click');
         }
