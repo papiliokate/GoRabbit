@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "go-rabbit",
     "public": "dist",
     "ignore": [
       "firebase.json",

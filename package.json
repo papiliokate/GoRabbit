@@ -9,7 +9,7 @@
         "preview": "vite preview",
         "deploy": "node ../StudioHub/deploy_ecosystem.js",
         "generate-maps": "node apply_daily_maps.js",
-        "generate-video": "node scripts/generate_video.js"
+        "generate-video": "node ../StudioHub/scripts/generate_video.js"
     },
     "devDependencies": {
         "vite": "^8.0.4"
