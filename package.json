@@ -11,9 +11,9 @@
                     "generate-maps":  "node apply_daily_maps.js",
                     "generate-video":  "node ../StudioHub/scripts/generate_video.js"
                 },
-    "devDependencies":  {
-                            "vite":  "^5.2.0"
-                        },
+    "devDependencies": {
+        "vite": "^8.0.4"
+    },
     "dependencies":  {
 
                      }
